@@ -14,6 +14,11 @@ jobs:
   validate:
     name: Validacion de Calidad y Build
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+      DATABASE_URL_UNPOOLED: "postgresql://dummy:dummy@localhost:5432/dummy"
+      BETTER_AUTH_SECRET: "ci-dummy-secret-12345678901234567890"
+      BETTER_AUTH_URL: "http://localhost:3000"
 
     steps:
       - name: Checkout del repositorio
@@ -44,8 +49,3 @@ jobs:
 
       - name: Compilacion de produccion (Next.js build)
         run: pnpm build
-        env:
-          DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
-          DATABASE_URL_UNPOOLED: "postgresql://dummy:dummy@localhost:5432/dummy"
-          BETTER_AUTH_SECRET: "ci-dummy-secret-12345678901234567890"
-          BETTER_AUTH_URL: "http://localhost:3000"
