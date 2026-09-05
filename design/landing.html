@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QualityTrack — Trazabilidad para el mecanizado industrial</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2322262D'/%3E%3Ctext x='16' y='22' font-family='monospace' font-weight='bold' font-size='14' fill='%23FBFAF6' text-anchor='middle'%3EQT%3C/text%3E%3Crect x='23' y='23' width='9' height='9' fill='%23D9480F'/%3E%3C/svg%3E">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={theme:{extend:{
+  colors:{paper:'#F2EFE8',card:'#FBFAF6',line:'#DAD5C8',line2:'#C4BDAC',ink:'#22262D',muted:'#7B7565',accent:'#D9480F',ok:'#2E7D4F',warn:'#A8760E',danger:'#B23A2E'},
+  fontFamily:{sans:['Archivo','sans-serif'],mono:['"JetBrains Mono"','monospace']},
+  boxShadow:{hard:'7px 7px 0 0 rgba(34,38,45,0.14)',hard2:'12px 12px 0 0 rgba(34,38,45,0.10)'}
+}}}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{--ink:#22262D;--paper:#F2EFE8;--card:#FBFAF6;--line:#DAD5C8;--line2:#C4BDAC;--muted:#7B7565;--accent:#D9480F;--ok:#2E7D4F;--warn:#A8760E;--danger:#B23A2E}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);font-family:'Archivo',sans-serif;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:linear-gradient(rgba(34,38,45,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(34,38,45,.035) 1px,transparent 1px);
+    background-size:26px 26px}
+  .xdisp{font-stretch:124%}
+  .disp{font-stretch:114%}
+  .kicker{font:600 10px 'JetBrains Mono';letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
+  .cellhead{font:600 9.5px 'JetBrains Mono';letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .stamp{position:relative;display:inline-block;border:1.5px solid currentColor;padding:.45rem .9rem;font:700 11px 'JetBrains Mono';letter-spacing:.2em;text-transform:uppercase}
+  .stamp::after{content:'';position:absolute;inset:2px;border:1px solid currentColor;opacity:.45;pointer-events:none}
+  .tag{display:inline-block;border:1px solid currentColor;padding:.2rem .55rem;font:600 9.5px/1.4 'JetBrains Mono';letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:.55rem;border:1.5px solid var(--ink);padding:.7rem 1.15rem;font:600 11px 'JetBrains Mono';letter-spacing:.16em;text-transform:uppercase;background:var(--card);color:var(--ink);cursor:pointer;transition:all .15s}
+  .btn:hover{background:var(--ink);color:var(--paper);transform:translate(-1px,-1px);box-shadow:3px 3px 0 rgba(34,38,45,.25)}
+  .btn:active{transform:none;box-shadow:none}
+  .btn-acc{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn-acc:hover{background:#A83A0B;border-color:#A83A0B;color:#fff}
+  .cm{position:absolute;width:14px;height:14px;pointer-events:none}
+  .cm-tl{top:-6px;left:-6px;border-top:2px solid var(--ink);border-left:2px solid var(--ink)}
+  .cm-tr{top:-6px;right:-6px;border-top:2px solid var(--ink);border-right:2px solid var(--ink)}
+  .cm-bl{bottom:-6px;left:-6px;border-bottom:2px solid var(--ink);border-left:2px solid var(--ink)}
+  .cm-br{bottom:-6px;right:-6px;border-bottom:2px solid var(--ink);border-right:2px solid var(--ink)}
+  /* — dibujo del plano — */
+  .draw{stroke-dasharray:1;stroke-dashoffset:1;animation:draw .9s cubic-bezier(.5,0,.3,1) forwards;animation-delay:var(--d,0s)}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .fd{opacity:0;animation:fdIn .6s ease forwards;animation-delay:var(--d,0s)}
+  @keyframes fdIn{to{opacity:1}}
+  @keyframes stampIn{0%{transform:scale(2.4) rotate(-16deg);opacity:0}55%{transform:scale(.92) rotate(-8deg);opacity:1}75%{transform:scale(1.05) rotate(-8deg)}100%{transform:scale(1) rotate(-8deg);opacity:1}}
+  .stamp-anim{opacity:0;animation:stampIn .55s cubic-bezier(.3,1.2,.4,1) forwards;animation-delay:var(--d,0s)}
+  @keyframes scanMove{0%{top:6%}100%{top:86%}}
+  .scanner{animation:scanMove 5s ease-in-out 3.4s infinite alternate}
+  @keyframes uline{to{transform:scaleX(1)}}
+  .uline{transform:scaleX(0);transform-origin:left;animation:uline .8s cubic-bezier(.6,0,.2,1) forwards;animation-delay:var(--d,1.2s)}
+  /* — reveal on scroll — */
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s cubic-bezier(.3,.8,.3,1);transition-delay:var(--rd,0s)}
+  .reveal.in{opacity:1;transform:none}
+  /* — marquee — */
+  .mq{overflow:hidden;border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);background:var(--card)}
+  .mq-track{display:flex;width:max-content;animation:mq 38s linear infinite}
+  .mq:hover .mq-track{animation-play-state:paused}
+  @keyframes mq{to{transform:translateX(-50%)}}
+  .mq-item{display:flex;align-items:center;gap:1rem;padding:.85rem 1.5rem;font:600 11px 'JetBrains Mono';letter-spacing:.2em;text-transform:uppercase;white-space:nowrap;color:var(--ink)}
+  .mq-item::before{content:'';width:7px;height:7px;background:var(--accent);flex-shrink:0}
+  /* — diagrama caos/orden — */
+  .dnode{position:absolute;display:flex;align-items:center;gap:.6rem;background:var(--card);border:1.5px solid var(--line2);padding:.5rem .8rem;transition:all .8s cubic-bezier(.5,0,.2,1);transition-delay:var(--d,0s);box-shadow:3px 3px 0 rgba(34,38,45,.08)}
+  .dnode .dn-num{font:700 10px 'JetBrains Mono';color:var(--muted)}
+  .dnode .dn-lbl{font:700 11px 'Archivo';letter-spacing:.02em}
+  .mode-order .dnode{border-color:var(--ink);box-shadow:none;transform:rotate(0deg)!important}
+  .mode-order .dnode .dn-num{color:var(--accent)}
+  .mode-order #chaosLines{opacity:0}
+  #orderLine{transform:scaleY(0);transform-origin:top;transition:transform 1s cubic-bezier(.6,0,.2,1) .35s}
+  .mode-order #orderLine{transform:scaleY(1)}
+  #stampChaos{transition:opacity .4s}
+  .mode-order #stampChaos{opacity:0}
+  #stampOrder{opacity:0;transition:opacity .5s .9s}
+  .mode-order #stampOrder{opacity:1}
+  .mode-btn{font:600 10px 'JetBrains Mono';letter-spacing:.16em;padding:.5rem .85rem;border:1px solid var(--line2);color:var(--muted);cursor:pointer;background:var(--card);transition:all .15s}
+  .mode-btn:hover{border-color:var(--ink);color:var(--ink)}
+  .mode-btn.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+  /* — nodos del ciclo — */
+  .cyc-dot{transition:all .5s cubic-bezier(.3,1.3,.4,1)}
+  .cyc-item.lit .cyc-dot{background:var(--ink);border-color:var(--ink);transform:scale(1.15)}
+  .cyc-item.lit .cyc-num{color:var(--accent)}
+  /* — mock tilt — */
+  #tiltStage{perspective:1400px}
+  #tiltCard{transition:transform .35s ease;transform-style:preserve-3d;will-change:transform}
+  .mrow{transition:background .15s}
+  .mrow:hover{background:var(--paper)}
+  .mrow:hover .mgo{transform:translateX(4px)}
+  .mgo{transition:transform .2s}
+  /* — boot console — */
+  @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+  .cursor-blk{display:inline-block;width:8px;height:14px;background:var(--accent);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+  @keyframes bootIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .boot-line{animation:bootIn .25s ease forwards}
+  #bootPanel{animation:bootIn .4s ease forwards}
+  ::selection{background:var(--accent);color:#fff}
+</style>
+</head>
+<body class="antialiased">
+
+<!-- barra de progreso de scroll -->
+<div id="progress" class="fixed top-0 left-0 h-[3px] bg-accent z-[80] w-0"></div>
+
+<!-- ══════════ HEADER ══════════ -->
+<header class="sticky top-0 z-50 bg-card/95 backdrop-blur border-b-2 border-ink">
+  <div class="max-w-[1360px] mx-auto px-5 lg:px-8 h-[64px] flex items-center gap-6">
+    <a href="#inicio" class="flex items-center gap-3 shrink-0">
+      <div class="w-9 h-9 bg-ink relative shrink-0">
+        <span class="absolute inset-0 grid place-items-center text-paper mono font-bold text-[14px]">QT</span>
+        <span class="absolute right-0 bottom-0 w-3 h-3 bg-accent"></span>
+      </div>
+      <div class="leading-none">
+        <div class="font-extrabold xdisp tracking-tight text-[17px]">QUALITYTRACK</div>
+        <div class="kicker mt-1" style="font-size:8px">MECANIZADO · TRAZABILIDAD</div>
+      </div>
+    </a>
+    <nav class="hidden md:flex items-center gap-7 ml-4">
+      <a href="#problema" class="mono text-[10.5px] font-semibold tracking-[.18em] text-muted hover:text-ink transition-colors">EL PROBLEMA</a>
+      <a href="#ciclo" class="mono text-[10.5px] font-semibold tracking-[.18em] text-muted hover:text-ink transition-colors">EL CICLO</a>
+      <a href="#sistema" class="mono text-[10.5px] font-semibold tracking-[.18em] text-muted hover:text-ink transition-colors">EL SISTEMA</a>
+    </nav>
+    <div class="flex-1"></div>
+    <span class="hidden lg:block mono text-[10px] text-muted tracking-[.2em]">PROTOype v1.0</span>
+    <button onclick="openBoot()" class="btn btn-acc !py-2.5"><i data-lucide="log-in" class="w-3.5 h-3.5"></i>ENTRAR AL DASHBOARD</button>
+  </div>
+</header>
+
+<!-- ══════════ HERO ══════════ -->
+<section id="inicio" class="relative z-10">
+  <div class="max-w-[1360px] mx-auto px-5 lg:px-8 pt-12 lg:pt-20 pb-16 grid lg:grid-cols-[1.02fr_1fr] gap-12 lg:gap-16 items-center">
+
+    <!-- texto -->
+    <div>
+      <div class="flex items-center gap-3 mb-6 reveal">
+        <span class="w-8 h-px bg-accent"></span>
+        <span class="kicker">GESTIÓN · TRAZABILIDAD · DOCUMENTACIÓN</span>
+      </div>
+      <h1 class="text-[38px] sm:text-[52px] lg:text-[60px] font-extrabold xdisp leading-[1.02] tracking-tight reveal" style="--rd:.08s">
+        Un <span class="relative inline-block">expediente único<span class="uline absolute left-0 -bottom-1 w-full h-[5px] bg-accent" style="--d:1.3s"></span></span> para cada trabajo.<br>
+        De la solicitud a la entrega.
+      </h1>
+      <p class="text-[16px] lg:text-[17.5px] text-muted leading-relaxed mt-7 max-w-[560px] reveal" style="--rd:.18s">
+        QualityTrack centraliza cotizaciones, órdenes de trabajo, planos, certificados de materia prima,
+        hojas de ruta y controles de calidad en una sola cadena trazable.
+        <b class="text-ink">Sin planillas sueltas. Sin papeles perdidos. Sin buscar en carpetas.</b>
+      </p>
+      <div class="flex flex-wrap gap-3.5 mt-9 reveal" style="--rd:.28s">
+        <button onclick="openBoot()" class="btn btn-acc !px-6 !py-3.5"><i data-lucide="log-in" class="w-4 h-4"></i>ENTRAR AL DASHBOARD</button>
+        <a href="#problema" class="btn !px-6 !py-3.5"><i data-lucide="scan-search" class="w-4 h-4"></i>VER CÓMO FUNCIONA</a>
+      </div>
+      <!-- strip de especificaciones -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 border border-ink bg-card mt-12 divide-x divide-line max-w-[620px] reveal" style="--rd:.4s">
+        <div class="p-3.5 border-b sm:border-b-0 border-line"><div class="mono text-[22px] font-bold leading-none">6</div><div class="kicker mt-1.5" style="font-size:8.5px">ETAPAS VINCULADAS</div></div>
+        <div class="p-3.5 border-b sm:border-b-0 border-line"><div class="mono text-[22px] font-bold leading-none">1</div><div class="kicker mt-1.5" style="font-size:8.5px">FUENTE DE VERDAD</div></div>
+        <div class="p-3.5"><div class="mono text-[22px] font-bold leading-none">100%</div><div class="kicker mt-1.5" style="font-size:8.5px">DOCS ASOCIADOS</div></div>
+        <div class="p-3.5"><div class="mono text-[22px] font-bold leading-none">0</div><div class="kicker mt-1.5" style="font-size:8.5px">CARPETAS QUE REVISAR</div></div>
+      </div>
+    </div>
+
+    <!-- plano animado -->
+    <div id="heroStage" class="relative reveal" style="--rd:.25s">
+      <div id="heroSheet" class="relative border-2 border-ink bg-card shadow-hard2 will-change-transform" style="transform:rotate(-1.2deg)">
+        <span class="cm cm-tl"></span><span class="cm cm-tr"></span><span class="cm cm-bl"></span><span class="cm cm-br"></span>
+
+        <!-- escáner -->
+        <div class="scanner absolute left-4 right-4 h-10 bg-accent/[.06] z-10 pointer-events-none">
+          <div class="h-[2px] w-full bg-accent"></div>
+        </div>
+
+        <svg viewBox="0 0 640 520" class="w-full block">
+          <defs>
+            <pattern id="hx" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="7" stroke="#22262D" stroke-width="1" opacity=".7"/></pattern>
+            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+              <path d="M0,0L10,5L0,10z" fill="#22262D"/></marker>
+          </defs>
+          <rect width="640" height="520" fill="none"/>
+          <!-- vista frontal -->
+          <circle cx="320" cy="240" r="120" pathLength="1" class="draw" style="--d:.25s" fill="none" stroke="#22262D" stroke-width="2.2"/>
+          <circle cx="320" cy="240" r="78"  pathLength="1" class="draw" style="--d:.55s" fill="none" stroke="#22262D" stroke-width="1.5"/>
+          <circle cx="320" cy="240" r="34"  pathLength="1" class="draw" style="--d:.8s"  fill="none" stroke="#22262D" stroke-width="1.5"/>
+          <circle cx="320" cy="240" r="99"  class="fd" style="--d:1.5s" fill="none" stroke="#22262D" stroke-width=".8" stroke-dasharray="5 5"/>
+          <g class="fd" style="--d:1.6s">
+            <circle cx="320"   cy="141"   r="14" fill="none" stroke="#22262D" stroke-width="1.3"/>
+            <circle cx="234.3" cy="190.5" r="14" fill="none" stroke="#22262D" stroke-width="1.3"/>
+            <circle cx="234.3" cy="289.5" r="14" fill="none" stroke="#22262D" stroke-width="1.3"/>
+            <circle cx="320"   cy="339"   r="14" fill="none" stroke="#22262D" stroke-width="1.3"/>
+            <circle cx="405.7" cy="289.5" r="14" fill="none" stroke="#22262D" stroke-width="1.3"/>
+            <circle cx="405.7" cy="190.5" r="14" fill="none" stroke="#22262D" stroke-width="1.3"/>
+          </g>
+          <g class="fd" style="--d:1.2s" stroke="#22262D" stroke-width=".7" stroke-dasharray="15 4 3 4">
+            <line x1="180" y1="240" x2="460" y2="240"/><line x1="320" y1="100" x2="320" y2="380"/>
+          </g>
+          <!-- seccion A-A -->
+          <g class="fd" style="--d:1.9s">
+            <path d="M500,240 L500,268 L560,268 L560,212 L532,212 L532,240 Z" fill="url(#hx)" stroke="#22262D" stroke-width="1.4"/>
+            <line x1="546" y1="200" x2="546" y2="282" stroke="#22262D" stroke-width=".6" stroke-dasharray="12 4 3 4"/>
+            <text x="546" y="194" font-family="'JetBrains Mono'" font-size="9" font-weight="700" fill="#22262D" text-anchor="middle">A-A</text>
+          </g>
+          <!-- acotado -->
+          <g class="fd" style="--d:2.1s" stroke="#22262D" stroke-width=".8">
+            <line x1="200" y1="252" x2="200" y2="408"/><line x1="440" y1="252" x2="440" y2="408"/>
+            <line x1="200" y1="402" x2="440" y2="402" stroke-width=".9" marker-start="url(#ar)" marker-end="url(#ar)"/>
+            <text x="320" y="394" font-family="'JetBrains Mono'" font-size="11" fill="#22262D" text-anchor="middle" stroke="none">Ø240</text>
+            <line x1="405.7" y1="190.5" x2="520" y2="120" marker-start="url(#ar)"/>
+            <text x="526" y="116" font-family="'JetBrains Mono'" font-size="10" font-weight="600" fill="#22262D" stroke="none">6× Ø24</text>
+            <text x="526" y="129" font-family="'JetBrains Mono'" font-size="8.5" fill="#7B7565" stroke="none">PCD Ø198 · EQ. SP</text>
+            <line x1="354" y1="240" x2="470" y2="330" marker-start="url(#ar)"/>
+            <text x="476" y="334" font-family="'JetBrains Mono'" font-size="10" font-weight="600" fill="#22262D" stroke="none">Ø60 H7</text>
+            <path d="M418,296 l4.5,-8 l4.5,8" fill="none" stroke="#22262D" stroke-width="1"/><line x1="413" y1="296" x2="429" y2="296" stroke="#22262D" stroke-width="1"/>
+            <text x="434" y="300" font-family="'JetBrains Mono'" font-size="9" font-weight="600" fill="#22262D" stroke="none">Ra 3.2</text>
+          </g>
+          <!-- rótulo interno -->
+          <text x="36" y="52" font-family="'JetBrains Mono'" font-size="11" font-weight="700" fill="#22262D" class="fd" style="--d:.1s">PLANO DE FABRICACIÓN — FL-1204</text>
+          <text x="36" y="68" font-family="'JetBrains Mono'" font-size="8.5" fill="#7B7565" class="fd" style="--d:.2s">TODAS LAS COTAS EN mm · TOLERANCIAS ISO 2768-mK</text>
+        </svg>
+
+        <!-- cajetín -->
+        <div class="border-t-2 border-ink bg-card grid grid-cols-2 sm:grid-cols-4 divide-x divide-line text-[10px] mono font-semibold">
+          <div class="px-3 py-2.5">FLANZA Ø220 · REV C</div>
+          <div class="px-3 py-2.5 hidden sm:block">MATERIAL: AISI 4140</div>
+          <div class="px-3 py-2.5 hidden sm:block">ESC 1:2 · A3</div>
+          <div class="px-3 py-2.5 flex items-center gap-2"><span class="w-2 h-2 bg-accent"></span>APROB. V. SANZ</div>
+        </div>
+
+        <!-- sello -->
+        <div class="absolute right-5 bottom-16 stamp-anim" style="--d:2.7s">
+          <span class="stamp" style="color:var(--ok);font-size:13px">TRAZADO · OK</span>
+        </div>
+
+        <!-- tags flotantes -->
+        <div class="absolute -left-3 top-10 fd" style="--d:3.1s">
+          <div class="flex items-center gap-2 bg-ink text-paper px-3 py-2 shadow-hard">
+            <i data-lucide="flask-conical" class="w-3.5 h-3.5 text-accent"></i>
+            <span class="mono text-[9.5px] font-bold tracking-[.14em]">CERT. 3.1 · COLADA 88412</span></div>
+        </div>
+        <div class="absolute -right-2 top-[44%] fd" style="--d:3.45s">
+          <div class="flex items-center gap-2 bg-card border-[1.5px] border-ink px-3 py-2 shadow-hard">
+            <i data-lucide="link-2" class="w-3.5 h-3.5 text-accent"></i>
+            <span class="mono text-[9.5px] font-bold tracking-[.14em]">VINCULADO A OT-2025-0104</span></div>
+        </div>
+        <div class="absolute -left-2 bottom-24 fd" style="--d:3.8s">
+          <div class="flex items-center gap-2 bg-card border-[1.5px] border-ink px-3 py-2 shadow-hard">
+            <i data-lucide="history" class="w-3.5 h-3.5 text-accent"></i>
+            <span class="mono text-[9.5px] font-bold tracking-[.14em]">BITÁCORA · 12 EVENTOS</span></div>
+        </div>
+      </div>
+
+      <!-- anotaciones de plano alrededor -->
+      <div class="hidden lg:flex justify-between mt-4 mono text-[9px] text-muted tracking-[.22em]">
+        <span>REF: HERO-PLN-01</span><span>HOJA 1/1</span><span>QUALITYTRACK · 2025</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ MARQUEE DE DOCUMENTOS ══════════ -->
+<div class="mq relative z-10">
+  <div class="mq-track" id="mqTrack">
+    <div class="mq-item">PLANOS DE INGENIERÍA</div><div class="mq-item">ESPECIFICACIONES TÉCNICAS</div>
+    <div class="mq-item">CERTIFICADOS DE MATERIA PRIMA 3.1</div><div class="mq-item">ÓRDENES DE COMPRA</div>
+    <div class="mq-item">COTIZACIONES</div><div class="mq-item">HOJAS DE RUTA</div>
+    <div class="mq-item">REGISTROS DE PRODUCCIÓN</div><div class="mq-item">CONTROLES DE CALIDAD</div>
+    <div class="mq-item">NO CONFORMIDADES</div><div class="mq-item">REMITOS</div>
+    <div class="mq-item">FACTURAS</div><div class="mq-item">BITÁCORA DE EXPEDIENTE</div>
+  </div>
+</div>
+
+<!-- ══════════ PROBLEMA ══════════ -->
+<section id="problema" class="relative z-10 scroll-mt-24">
+  <div class="max-w-[1360px] mx-auto px-5 lg:px-8 py-20 lg:py-28">
+    <div class="grid lg:grid-cols-[1fr_1.1fr] gap-12 lg:gap-20 items-start">
+
+      <div class="lg:sticky lg:top-28">
+        <div class="flex items-center gap-3 mb-6 reveal">
+          <span class="mono text-[10px] font-bold text-accent tracking-[.2em]">SEC. 01</span>
+          <span class="w-8 h-px bg-ink"></span>
+          <span class="kicker">DIAGNÓSTICO</span>
+        </div>
+        <h2 class="text-[32px] lg:text-[44px] font-extrabold xdisp leading-[1.05] tracking-tight reveal" style="--rd:.08s">
+          El problema nunca fue la cantidad de información.<br>
+          <span class="text-accent">Es no poder responder.</span>
+        </h2>
+        <div class="border-l-[3px] border-accent bg-card border border-line border-l-[3px] px-5 py-4 mt-8 reveal" style="--rd:.16s">
+          <p class="mono text-[12.5px] leading-relaxed text-ink/85">“¿Qué trabajo se realizó, para qué cliente, bajo qué especificaciones, con qué material, qué operaciones se realizaron, quién intervino, qué controles se efectuaron y qué documentación respalda el proceso?”</p>
+          <p class="kicker mt-3">LA PREGUNTA QUE HOY TARDA DÍAS EN CONTESTARSE</p>
+        </div>
+
+        <div class="mt-10 reveal" style="--rd:.22s">
+          <div class="grid gap-0 border-t-2 border-ink">
+            <div class="flex items-center gap-4 py-4 border-b border-line">
+              <i data-lucide="search-x" class="w-5 h-5 text-accent shrink-0"></i>
+              <div><div class="font-bold text-[14px]">Falta de trazabilidad</div>
+                <div class="text-[12.5px] text-muted mt-0.5">Reconstruir el historial de una pieza exige recorrer archivos, carpetas y recuerdos.</div></div>
+            </div>
+            <div class="flex items-center gap-4 py-4 border-b border-line">
+              <i data-lucide="unlink" class="w-5 h-5 text-accent shrink-0"></i>
+              <div><div class="font-bold text-[14px]">Información dispersa</div>
+                <div class="text-[12.5px] text-muted mt-0.5">Planos, certificados y cotizaciones viven sueltos, sin vínculo con la Orden de Trabajo.</div></div>
+            </div>
+            <div class="flex items-center gap-4 py-4 border-b border-line">
+              <i data-lucide="alert-triangle" class="w-5 h-5 text-accent shrink-0"></i>
+              <div><div class="font-bold text-[14px]">Errores de carga manual</div>
+                <div class="text-[12.5px] text-muted mt-0.5">Cada pase de mano entre cotización, OT y hoja de ruta es una oportunidad de equivocarse.</div></div>
+            </div>
+            <div class="flex items-center gap-4 py-4 border-b border-line">
+              <i data-lucide="timer" class="w-5 h-5 text-accent shrink-0"></i>
+              <div><div class="font-bold text-[14px]">Consulta lenta en planta</div>
+                <div class="text-[12.5px] text-muted mt-0.5">El operario necesita el plano ahora, no después de buscarlo en tres lugares.</div></div>
+            </div>
+            <div class="flex items-center gap-4 py-4 border-b border-line">
+              <i data-lucide="folder-search" class="w-5 h-5 text-accent shrink-0"></i>
+              <div><div class="font-bold text-[14px]">Auditorías cuesta arriba</div>
+                <div class="text-[12.5px] text-muted mt-0.5">Reunir evidencia ordenada del proceso puede tomar días que nadie tiene.</div></div>
+            </div>
+            <div class="flex items-center gap-4 py-4 border-b border-line">
+              <i data-lucide="bar-chart-3" class="w-5 h-5 text-accent shrink-0"></i>
+              <div><div class="font-bold text-[14px]">Cero indicadores</div>
+                <div class="text-[12.5px] text-muted mt-0.5">Sin datos estructurados no hay tiempos, estados, NC ni oportunidades de mejora.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- diagrama interactivo -->
+      <div class="reveal" style="--rd:.2s">
+        <div class="relative border-2 border-ink bg-card shadow-hard">
+          <span class="cm cm-tl"></span><span class="cm cm-tr"></span><span class="cm cm-bl"></span><span class="cm cm-br"></span>
+          <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-line bg-paper flex-wrap">
+            <span class="kicker" style="color:var(--ink)">EL MISMO TRABAJO · DOS MUNDOS</span>
+            <div class="flex gap-2">
+              <button id="btnChaos" class="mode-btn on" onclick="setMode('chaos')">HOY / SIN SISTEMA</button>
+              <button id="btnOrder" class="mode-btn" onclick="setMode('order')">CON QUALITYTRACK</button>
+            </div>
+          </div>
+
+          <div id="diagram" class="relative h-[520px] overflow-hidden">
+            <!-- líneas de caos -->
+            <svg id="chaosLines" class="absolute inset-0 w-full h-full transition-opacity duration-700" preserveAspectRatio="none" viewBox="0 0 100 100">
+              <g stroke="#B23A2E" stroke-width=".35" stroke-dasharray="1.6 1.6" fill="none" opacity=".65">
+                <path d="M14,18 C35,45 60,20 74,42"/><path d="M74,42 C55,60 30,40 18,58"/>
+                <path d="M18,58 C40,70 70,55 76,78"/><path d="M46,34 C60,50 40,62 30,80"/>
+                <path d="M14,18 C30,55 55,65 46,62"/><path d="M74,42 C60,68 50,75 30,80"/>
+                <path d="M46,34 C25,50 15,48 18,58"/>
+              </g>
+            </svg>
+            <!-- línea del expediente ordenado -->
+            <div id="orderLine" class="absolute left-[26px] top-[30px] bottom-[24px] w-[2px] bg-ink"></div>
+
+            <!-- sello caos -->
+            <div id="stampChaos" class="absolute right-6 top-1/2 -translate-y-1/2 hidden md:block" style="transform:translateY(-50%) rotate(6deg)">
+              <span class="stamp" style="color:var(--danger)">INFORMACIÓN<br>DISPERSA</span>
+            </div>
+            <!-- sello orden -->
+            <div id="stampOrder" class="absolute right-6 md:right-10 top-1/2 hidden md:block" style="transform:translateY(-50%) rotate(-4deg)">
+              <span class="stamp" style="color:var(--ok)">EXPEDIENTE<br>ÚNICO</span>
+            </div>
+
+            <!-- nodos (posiciones via CSS custom props) -->
+            <div class="dnode" style="--d:0s;   left:6%;  top:8%;  transform:rotate(-6deg)"><span class="dn-num">S-01</span><span class="dn-lbl">SOLICITUD</span></div>
+            <div class="dnode" style="--d:.06s; left:64%; top:5%;  transform:rotate(4deg)"><span class="dn-num">S-02</span><span class="dn-lbl">COTIZACIÓN</span></div>
+            <div class="dnode" style="--d:.12s; left:34%; top:22%; transform:rotate(-3deg)"><span class="dn-num">S-03</span><span class="dn-lbl">PLANO</span></div>
+            <div class="dnode" style="--d:.18s; left:70%; top:30%; transform:rotate(7deg)"><span class="dn-num">S-04</span><span class="dn-lbl">CERT. 3.1</span></div>
+            <div class="dnode" style="--d:.24s; left:8%;  top:42%; transform:rotate(5deg)"><span class="dn-num">S-05</span><span class="dn-lbl">OC CLIENTE</span></div>
+            <div class="dnode" style="--d:.3s;  left:46%; top:52%; transform:rotate(-5deg)"><span class="dn-num">S-06</span><span class="dn-lbl">HOJA DE RUTA</span></div>
+            <div class="dnode" style="--d:.36s; left:20%; top:68%; transform:rotate(3deg)"><span class="dn-num">S-07</span><span class="dn-lbl">INSPECCIÓN</span></div>
+            <div class="dnode" style="--d:.42s; left:62%; top:78%; transform:rotate(-7deg)"><span class="dn-num">S-08</span><span class="dn-lbl">ENTREGA</span></div>
+
+            <!-- caption inferior -->
+            <div class="absolute left-4 bottom-3 right-4 mono text-[10px] tracking-[.18em] text-muted">
+              <span id="diagCaption">CADA DOCUMENTO EN UN LUGAR DISTINTO · RELACIONES SOSTENIDAS A MEMORIA</span>
+            </div>
+          </div>
+        </div>
+        <p class="kicker mt-3 text-center">EL DIAGRAMA SE TRANSFORMA SOLO — O USÁ LOS BOTONES PARA COMPARAR</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ CICLO ══════════ -->
+<section id="ciclo" class="relative z-10 scroll-mt-24 border-t-2 border-ink bg-card">
+  <div class="max-w-[1100px] mx-auto px-5 lg:px-8 py-20 lg:py-28">
+    <div class="flex items-center gap-3 mb-6 reveal">
+      <span class="mono text-[10px] font-bold text-accent tracking-[.2em]">SEC. 02</span>
+      <span class="w-8 h-px bg-ink"></span>
+      <span class="kicker">EL CICLO DEL TRABAJO</span>
+    </div>
+    <h2 class="text-[32px] lg:text-[44px] font-extrabold xdisp leading-[1.05] tracking-tight max-w-[720px] reveal" style="--rd:.08s">
+      Seis etapas. Una sola cadena.<br>Nada se suelta en el camino.
+    </h2>
+
+    <div class="mt-14 relative">
+      <div class="absolute left-[13px] lg:left-[15px] top-2 bottom-2 w-[2px] bg-line"></div>
+
+      <!-- 01 -->
+      <div class="cyc-item relative pl-14 lg:pl-20 pb-12 reveal" style="--rd:.05s">
+        <span class="cyc-dot absolute left-0 top-1 w-[28px] h-[28px] border-2 border-line2 bg-card grid place-items-center mono text-[10px] font-bold">01</span>
+        <div class="flex flex-col lg:flex-row lg:items-baseline gap-2 lg:gap-8">
+          <h3 class="text-[20px] font-extrabold xdisp leading-none cyc-num transition-colors">Solicitud del cliente</h3>
+          <div class="flex flex-wrap gap-1.5">
+            <span class="tag" style="color:var(--muted)">RFQ</span><span class="tag" style="color:var(--muted)">PLANO DEL CLIENTE</span><span class="tag" style="color:var(--muted)">ESPECIFICACIONES</span>
+          </div>
+        </div>
+        <p class="text-[14px] text-muted leading-relaxed mt-3 max-w-[620px]">El requerimiento se registra con su texto original, canal de entrada y adjuntos. Desde el primer minuto, el trabajo tiene expediente.</p>
+      </div>
+      <!-- 02 -->
+      <div class="cyc-item relative pl-14 lg:pl-20 pb-12 reveal" style="--rd:.1s">
+        <span class="cyc-dot absolute left-0 top-1 w-[28px] h-[28px] border-2 border-line2 bg-card grid place-items-center mono text-[10px] font-bold">02</span>
+        <div class="flex flex-col lg:flex-row lg:items-baseline gap-2 lg:gap-8">
+          <h3 class="text-[20px] font-extrabold xdisp leading-none cyc-num transition-colors">Cotización</h3>
+          <div class="flex flex-wrap gap-1.5">
+            <span class="tag" style="color:var(--muted)">PROPUESTA</span><span class="tag" style="color:var(--muted)">APROBACIÓN REGISTRADA</span>
+          </div>
+        </div>
+        <p class="text-[14px] text-muted leading-relaxed mt-3 max-w-[620px]">Se emite, se envía y se aprueba. La aprobación queda asentada con usuario y fecha en la bitácora — no en un mail perdido.</p>
+      </div>
+      <!-- 03 -->
+      <div class="cyc-item relative pl-14 lg:pl-20 pb-12 reveal" style="--rd:.15s">
+        <span class="cyc-dot absolute left-0 top-1 w-[28px] h-[28px] border-2 border-line2 bg-card grid place-items-center mono text-[10px] font-bold">03</span>
+        <div class="flex flex-col lg:flex-row lg:items-baseline gap-2 lg:gap-8">
+          <h3 class="text-[20px] font-extrabold xdisp leading-none cyc-num transition-colors">Orden de Trabajo</h3>
+          <div class="flex flex-wrap gap-1.5">
+            <span class="tag" style="color:var(--muted)">SIN RECAPTURA DE DATOS</span><span class="tag" style="color:var(--muted)">MATERIAL + COLADA</span>
+          </div>
+        </div>
+        <p class="text-[14px] text-muted leading-relaxed mt-3 max-w-[620px]">Se genera automáticamente desde la cotización aprobada, transfiriendo cliente, especificaciones y documentación técnica. Cero tipeo, cero errores.</p>
+      </div>
+      <!-- 04 -->
+      <div class="cyc-item relative pl-14 lg:pl-20 pb-12 reveal" style="--rd:.2s">
+        <span class="cyc-dot absolute left-0 top-1 w-[28px] h-[28px] border-2 border-line2 bg-card grid place-items-center mono text-[10px] font-bold">04</span>
+        <div class="flex flex-col lg:flex-row lg:items-baseline gap-2 lg:gap-8">
+          <h3 class="text-[20px] font-extrabold xdisp leading-none cyc-num transition-colors">Hoja de Ruta</h3>
+          <div class="flex flex-wrap gap-1.5">
+            <span class="tag" style="color:var(--muted)">OPERACIONES SECUENCIADAS</span><span class="tag" style="color:var(--muted)">T. EST. VS T. REAL</span>
+          </div>
+        </div>
+        <p class="text-[14px] text-muted leading-relaxed mt-3 max-w-[620px]">Cada operación, máquina y operario definidos antes de arrancar. Planta consulta el plano y las instrucciones desde el mismo expediente.</p>
+      </div>
+      <!-- 05 -->
+      <div class="cyc-item relative pl-14 lg:pl-20 pb-12 reveal" style="--rd:.25s">
+        <span class="cyc-dot absolute left-0 top-1 w-[28px] h-[28px] border-2 border-line2 bg-card grid place-items-center mono text-[10px] font-bold">05</span>
+        <div class="flex flex-col lg:flex-row lg:items-baseline gap-2 lg:gap-8">
+          <h3 class="text-[20px] font-extrabold xdisp leading-none cyc-num transition-colors">Control de Calidad</h3>
+          <div class="flex flex-wrap gap-1.5">
+            <span class="tag" style="color:var(--muted)">PLAN DE INSPECCIÓN</span><span class="tag" style="color:var(--muted)">NC Y DISPOSICIÓN</span><span class="tag" style="color:var(--muted)">LIBERACIÓN</span>
+          </div>
+        </div>
+        <p class="text-[14px] text-muted leading-relaxed mt-3 max-w-[620px]">Inspecciones registradas con veredicto, inspector y hora. Las no conformidades abren reproceso trazable; la liberación emite certificado interno.</p>
+      </div>
+      <!-- 06 -->
+      <div class="cyc-item relative pl-14 lg:pl-20 reveal" style="--rd:.3s">
+        <span class="cyc-dot absolute left-0 top-1 w-[28px] h-[28px] border-2 border-line2 bg-card grid place-items-center mono text-[10px] font-bold">06</span>
+        <div class="flex flex-col lg:flex-row lg:items-baseline gap-2 lg:gap-8">
+          <h3 class="text-[20px] font-extrabold xdisp leading-none cyc-num transition-colors">Entrega</h3>
+          <div class="flex flex-wrap gap-1.5">
+            <span class="tag" style="color:var(--muted)">REMITO</span><span class="tag" style="color:var(--muted)">FACTURA</span><span class="tag" style="color:var(--muted)">EXPEDIENTE CERRADO</span>
+          </div>
+        </div>
+        <p class="text-[14px] text-muted leading-relaxed mt-3 max-w-[620px]">Remito y factura quedan vinculados. El expediente se cierra con la cadena completa verificada: lista para el cliente, para una auditoría o para el histórico.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ SISTEMA (PREVIEW) ══════════ -->
+<section id="sistema" class="relative z-10 scroll-mt-24 border-t-2 border-ink overflow-hidden">
+  <div class="max-w-[1360px] mx-auto px-5 lg:px-8 py-20 lg:py-28">
+    <div class="grid lg:grid-cols-[380px_1fr] gap-12 lg:gap-16 items-center">
+      <div>
+        <div class="flex items-center gap-3 mb-6 reveal">
+          <span class="mono text-[10px] font-bold text-accent tracking-[.2em]">SEC. 03</span>
+          <span class="w-8 h-px bg-ink"></span>
+          <span class="kicker">EL SISTEMA</span>
+        </div>
+        <h2 class="text-[32px] lg:text-[42px] font-extrabold xdisp leading-[1.05] tracking-tight reveal" style="--rd:.08s">
+          El tablero donde vive<br>todo el trabajo.
+        </h2>
+        <p class="text-[15px] text-muted leading-relaxed mt-6 reveal" style="--rd:.16s">
+          Cada fila es un expediente. Un clic abre la línea de proceso completa: etapas, documentos vinculados,
+          hoja de ruta y bitácora — sin salir de la pantalla, sin abrir una sola carpeta.
+        </p>
+        <ul class="grid gap-3 mt-7 reveal" style="--rd:.22s">
+          <li class="flex gap-3 items-start text-[13.5px]"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-ok shrink-0"></i>Estados en vivo: producción, calidad, NC, entrega</li>
+          <li class="flex gap-3 items-start text-[13.5px]"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-ok shrink-0"></i>Visor de planos con zoom directamente en el expediente</li>
+          <li class="flex gap-3 items-start text-[13.5px]"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-ok shrink-0"></i>Cadena de trazabilidad verificable extremo a extremo</li>
+          <li class="flex gap-3 items-start text-[13.5px]"><i data-lucide="check" class="w-4 h-4 mt-0.5 text-ok shrink-0"></i>Bitácora inmutable: quién hizo qué, y cuándo</li>
+        </ul>
+        <button onclick="openBoot()" class="btn btn-acc mt-8 reveal !px-6 !py-3.5" style="--rd:.28s"><i data-lucide="log-in" class="w-4 h-4"></i>ABRIR EL SISTEMA</button>
+      </div>
+
+      <!-- mock del tablero con tilt -->
+      <div id="tiltStage" class="reveal" style="--rd:.15s">
+        <div id="tiltCard" class="relative border-2 border-ink bg-card shadow-hard2">
+          <span class="cm cm-tl"></span><span class="cm cm-tr"></span><span class="cm cm-bl"></span><span class="cm-br cm" style="position:absolute;bottom:-6px;right:-6px;width:14px;height:14px;border-bottom:2px solid var(--ink);border-right:2px solid var(--ink);pointer-events:none"></span>
+          <!-- topbar -->
+          <div class="flex items-center gap-3 px-4 py-3 border-b-2 border-ink bg-paper">
+            <div class="w-7 h-7 bg-ink relative"><span class="absolute inset-0 grid place-items-center text-paper mono font-bold text-[11px]">QT</span><span class="absolute right-0 bottom-0 w-2 h-2 bg-accent"></span></div>
+            <span class="mono text-[10px] font-bold tracking-[.18em]">REGISTRO CENTRAL DE PRODUCCIÓN</span>
+            <span class="flex-1"></span>
+            <span class="mono text-[11px] font-semibold hidden sm:block">10:42:17</span>
+            <span class="w-2.5 h-2.5 bg-accent" style="animation:blink 1s steps(1) infinite"></span>
+          </div>
+          <!-- chips -->
+          <div class="flex gap-1.5 px-4 py-2.5 border-b border-line overflow-hidden">
+            <span class="mode-btn on !cursor-default">TODOS</span><span class="mode-btn !cursor-default">EN PRODUCCIÓN</span>
+            <span class="mode-btn !cursor-default">EN CALIDAD</span><span class="mode-btn !cursor-default">ENTREGADOS</span>
+          </div>
+          <!-- tabla -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-[12.5px]">
+              <thead><tr class="text-left">
+                <th class="th !py-2.5">OT</th><th class="th !py-2.5">CLIENTE</th><th class="th !py-2.5 hidden sm:table-cell">PIEZA</th>
+                <th class="th !py-2.5 hidden md:table-cell">MATERIAL</th><th class="th !py-2.5">AVANCE</th><th class="th !py-2.5">ESTADO</th><th></th></tr></thead>
+              <tbody>
+                <tr class="mrow border-t border-line cursor-pointer">
+                  <td class="td !py-3 mono font-bold">OT-2025-0104</td><td class="td !py-3">Metalúrgica Delta</td>
+                  <td class="td !py-3 hidden sm:table-cell font-semibold">Flanza de acople Ø220</td>
+                  <td class="td !py-3 mono text-[11px] hidden md:table-cell">AISI 4140</td>
+                  <td class="td !py-3"><div class="flex gap-1"><span class="w-2.5 h-2.5 bg-ink"></span><span class="w-2.5 h-2.5 bg-ink"></span><span class="w-2.5 h-2.5 bg-ink"></span><span class="w-2.5 h-2.5 bg-accent" style="animation:qp 2s infinite"></span><span class="w-2.5 h-2.5 border border-line2"></span><span class="w-2.5 h-2.5 border border-line2"></span><span class="w-2.5 h-2.5 border border-line2"></span></div></td>
+                  <td class="td !py-3"><span class="tag" style="color:var(--accent)">EN PRODUCCIÓN</span></td>
+                  <td class="td !py-3 w-8"><i data-lucide="chevron-right" class="w-4 h-4 text-muted mgo"></i></td>
+                </tr>
+                <tr class="mrow border-t border-line cursor-pointer">
+                  <td class="td !py-3 mono font-bold">OT-2025-0103</td><td class="td !py-3">AgroParts Ltd.</td>
+                  <td class="td !py-3 hidden sm:table-cell font-semibold">Eje excéntrico</td>
+                  <td class="td !py-3 mono text-[11px] hidden md:table-cell">42CrMo4</td>
+                  <td class="td !py-3"><div class="flex gap-1"><span class="w-2.5 h-2.5 bg-ink"></span><span class="w-2.5 h-2.5 bg-ink"></span><span class="w-2.5 h-2.5 bg-ink"></span><span class="w-2.5 h-2.5 bg-ink"></span><span class="w-2.5 h-2.5 bg-ink"></span><span class="w-2.5 h-2.5 bg-ink"></span></div></td>
+                  <td class="td !py-3"><span class="tag" style="color:var(--ink)">EN CALIDAD</span></td>
+                  <td class="td !py-3 w-8"><i data-lucide="chevron-right" class="w-4 h-4 text-muted mgo"></i></td>
+                </tr>
+                <tr class="mrow border-t border-line cursor-pointer">
+                  <td class="td !py-3 mono font-bold">OT-2025-0102</td><td class="td !py-3">HidroSur S.R.L.</td>
+                  <td class="td !py-3 hidden sm:table-cell font-semibold">Soporte de bomba</td>
+                  <td class="td !py-3 mono text-[11px] hidden md:table-cell">AISI 316L</td>
+                  <td class="td !py-3"><div class="flex gap-1"><span class="w-2.5 h-2.5 bg-ink"></span><span class="w-2.5 h-2.5 bg-ink"></span><span class="w-2.5 h-2.5 bg-ink"></span><span class="w-2.5 h-2.5 bg-ink"></span><span class="w-2.5 h-2.5 bg-ink"></span></div></td>
+                  <td class="td !py-3"><span class="tag" style="color:var(--ok)">LISTA</span></td>
+                  <td class="td !py-3 w-8"><i data-lucide="chevron-right" class="w-4 h-4 text-muted mgo"></i></td>
+                </tr>
+                <tr class="mrow border-t border-line cursor-pointer">
+                  <td class="td !py-3 mono font-bold">OT-2025-0101</td><td class="td !py-3">Metalúrgica Delta</td>
+                  <td class="td !py-3 hidden sm:table-cell font-semibold">Flanza de acople Ø180</td>
+                  <td class="td !py-3 mono text-[11px] hidden md:table-cell">C45</td>
+                  <td class="td !py-3"><div class="flex gap-1"><span class="w-2.5 h-2.5 bg-ink"></span><span class="w-2.5 h-2.5 bg-ink"></span><span class="w-2.5 h-2.5 bg-ink"></span><span class="w-2.5 h-2.5 bg-ink"></span><span class="w-2.5 h-2.5 bg-ink"></span><span class="w-2.5 h-2.5 bg-ink"></span><span class="w-2.5 h-2.5 bg-ink"></span></div></td>
+                  <td class="td !py-3"><span class="tag" style="color:var(--muted)">ENTREGADA</span></td>
+                  <td class="td !py-3 w-8"><i data-lucide="chevron-right" class="w-4 h-4 text-muted mgo"></i></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="border-t border-line px-4 py-2.5 mono text-[9.5px] text-muted tracking-[.18em]">
+            4 EXPEDIENTES · 23 DOCUMENTOS VINCULADOS · BITÁCORA ACTIVA
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ CRITERIO DE ÉXITO ══════════ -->
+<section class="relative z-10 bg-ink text-paper">
+  <div class="max-w-[1000px] mx-auto px-5 lg:px-8 py-20 lg:py-24">
+    <div class="kicker !text-paper/50 mb-8 reveal">CRITERIO DE ÉXITO DEL PROYECTO</div>
+    <blockquote class="text-[24px] sm:text-[30px] lg:text-[36px] font-bold xdisp leading-[1.25] reveal" style="--rd:.1s">
+      “Un usuario puede tomar una Orden de Trabajo y, sin buscar en sistemas, planillas o carpetas,
+      <span class="text-accent">reconstruir el historial completo del trabajo</span> y acceder a la documentación asociada.”
+    </blockquote>
+    <div class="flex flex-wrap items-center gap-4 mt-10 reveal" style="--rd:.2s">
+      <span class="stamp -rotate-2" style="color:var(--ok)">ESE ES EL PRODUCTO</span>
+      <span class="mono text-[11px] text-paper/50 tracking-[.2em]">Y CADA PANTALLA DE QUALITYTRACK EXISTE PARA ESO</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ CTA FINAL ══════════ -->
+<section class="relative z-10">
+  <div class="max-w-[1360px] mx-auto px-5 lg:px-8 py-20 lg:py-28">
+    <div class="relative border-2 border-ink bg-card shadow-hard p-8 lg:p-14 text-center overflow-hidden">
+      <span class="cm cm-tl"></span><span class="cm cm-tr"></span><span class="cm cm-bl"></span><span class="cm cm-br"></span>
+      <div class="kicker mb-5 reveal">QUALITYTRACK · SOLICITUD → COTIZACIÓN → OT → PRODUCCIÓN → CALIDAD → ENTREGA</div>
+      <h2 class="text-[32px] lg:text-[48px] font-extrabold xdisp leading-[1.05] tracking-tight reveal" style="--rd:.08s">
+        ¿Cuánto cuesta<br>no poder responder?
+      </h2>
+      <p class="text-[15px] text-muted leading-relaxed mt-5 max-w-[560px] mx-auto reveal" style="--rd:.16s">
+        Cada trabajo sin trazabilidad es tiempo perdido, riesgo operativo y evidencia que no aparece cuando se la necesita.
+        La solución es un expediente único por trabajo — y arranca acá.
+      </p>
+      <div class="flex flex-wrap justify-center gap-4 mt-9 reveal" style="--rd:.24s">
+        <button onclick="openBoot()" class="btn btn-acc !px-7 !py-4"><i data-lucide="log-in" class="w-4 h-4"></i>ENTRAR AL DASHBOARD</button>
+        <a href="#ciclo" class="btn !px-7 !py-4"><i data-lucide="route" class="w-4 h-4"></i>REPASAR EL CICLO</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ FOOTER ══════════ -->
+<footer class="relative z-10 bg-ink text-paper">
+  <div class="max-w-[1360px] mx-auto px-5 lg:px-8 py-10 flex flex-col md:flex-row items-start md:items-center gap-6">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 bg-paper relative"><span class="absolute inset-0 grid place-items-center text-ink mono font-bold text-[13px]">QT</span><span class="absolute right-0 bottom-0 w-3 h-3 bg-accent"></span></div>
+      <div class="leading-none">
+        <div class="font-extrabold xdisp text-[15px]">QUALITYTRACK</div>
+        <div class="mono text-[9px] text-paper/50 tracking-[.22em] mt-1">TRAZABILIDAD PARA EL MECANIZADO INDUSTRIAL</div>
+      </div>
+    </div>
+    <div class="flex-1"></div>
+    <div class="mono text-[10px] text-paper/50 tracking-[.18em] leading-relaxed">
+      PROTOTIPO CONCEPTUAL · 2025<br>
+      SOLICITUD → COTIZACIÓN → OT → HOJA DE RUTA → CALIDAD → ENTREGA
+    </div>
+  </div>
+</footer>
+
+<!-- ══════════ CONSOLA DE ACCESO (boot) ══════════ -->
+<div id="boot" class="fixed inset-0 z-[90] hidden bg-ink">
+  <div class="h-full flex items-center justify-center p-5">
+    <div class="w-full max-w-[600px]">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-9 h-9 bg-paper relative"><span class="absolute inset-0 grid place-items-center text-ink mono font-bold text-[13px]">QT</span><span class="absolute right-0 bottom-0 w-3 h-3 bg-accent"></span></div>
+        <span class="mono text-[11px] text-paper/70 tracking-[.24em]">CONSOLA DE OPERACIONES</span>
+      </div>
+      <div id="bootLog" class="mono text-[12.5px] leading-[2] text-paper/85 min-h-[150px]"></div>
+      <div id="bootPanel" class="hidden border-[1.5px] border-paper/30 bg-paper/[.04] p-5 mt-4">
+        <div class="flex items-start gap-3">
+          <i data-lucide="info" class="w-4 h-4 text-accent mt-0.5 shrink-0"></i>
+          <div>
+            <div class="text-[13.5px] font-bold">Estás viendo el prototipo de landing.</div>
+            <p class="text-[12.5px] text-paper/70 leading-relaxed mt-1">En el producto final, este acceso abre directamente el tablero de Órdenes de Trabajo con tus expedientes activos. El dashboard funcional ya está construido como prototipo separado.</p>
+            <div class="flex gap-3 mt-4">
+              <button onclick="closeBoot()" class="btn btn-acc !py-2.5">ENTENDIDO</button>
+              <!-- Para conectar con el dashboard real: reemplazar onclick por location.href='qualitytrack.html' -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toasts" class="fixed z-[95] bottom-5 right-5 flex flex-col gap-2.5 w-[340px] max-w-[calc(100vw-40px)]"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+
+/* — barra de progreso — */
+addEventListener('scroll',()=>{
+  const h=document.documentElement;
+  $('#progress').style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%';
+},{passive:true});
+
+/* — reveal on scroll — */
+const io=new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}
+}),{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+/* — nodos del ciclo se encienden en secuencia — */
+const cycIo=new IntersectionObserver(es=>es.forEach(e=>{
+  if(!e.isIntersecting)return;
+  const items=[...document.querySelectorAll('.cyc-item')];
+  const idx=items.indexOf(e.target);
+  setTimeout(()=>e.target.classList.add('lit'),(idx%6)*130);
+  cycIo.unobserve(e.target);
+}),{threshold:.4});
+document.querySelectorAll('.cyc-item').forEach(el=>cycIo.observe(el));
+
+/* — diagrama caos → orden — */
+const diag=$('#diagram');
+let diagAuto=false;
+function setMode(m){
+  diag.classList.toggle('mode-order',m==='order');
+  $('#btnChaos').classList.toggle('on',m!=='order');
+  $('#btnOrder').classList.toggle('on',m==='order');
+  $('#diagCaption').textContent=m==='order'
+    ?'TODO VINCULADO AL EXPEDIENTE · RELACIONES VERIFICABLES EN SEGUNDOS'
+    :'CADA DOCUMENTO EN UN LUGAR DISTINTO · RELACIONES SOSTENIDAS A MEMORIA';
+}
+new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.isIntersecting&&!diagAuto){diagAuto=true;setTimeout(()=>setMode('order'),900)}
+}),{threshold:.45}).observe(diag);
+
+/* — parallax sutil del plano del hero — */
+(()=>{
+  const stage=$('#heroStage'),sheet=$('#heroSheet');
+  let tx=0,ty=0,cx=0,cy=0;
+  stage.addEventListener('mousemove',e=>{
+    const r=stage.getBoundingClientRect();
+    tx=((e.clientX-r.left)/r.width-.5)*14;
+    ty=((e.clientY-r.top)/r.height-.5)*10;
+  });
+  stage.addEventListener('mouseleave',()=>{tx=0;ty=0});
+  (function loop(){cx+=(tx-cx)*.08;cy+=(ty-cy)*.08;
+    sheet.style.transform=`rotate(-1.2deg) translate(${cx}px,${cy}px)`;
+    requestAnimationFrame(loop)})();
+})();
+
+/* — tilt del mock del tablero — */
+(()=>{
+  const st=$('#tiltStage'),card=$('#tiltCard');
+  if(!matchMedia('(pointer:fine)').matches)return;
+  let tx=0,ty=0,cx=0,cy=0;
+  st.addEventListener('mousemove',e=>{
+    const r=st.getBoundingClientRect();
+    tx=((e.clientX-r.left)/r.width-.5)*-7;
+    ty=((e.clientY-r.top)/r.height-.5)*6;
+  });
+  st.addEventListener('mouseleave',()=>{tx=0;ty=0});
+  (function loop(){cx+=(tx-cx)*.09;cy+=(ty-cy)*.09;
+    card.style.transform=`rotateX(${cy}deg) rotateY(${cx}deg)`;
+    requestAnimationFrame(loop)})();
+})();
+
+/* — duplicar marquee para loop infinito — */
+ $('#mqTrack').innerHTML+=$('#mqTrack').innerHTML;
+
+/* — toast — */
+function toast(type,title,msg){
+  const map={ok:['check-circle-2','ok'],info:['info','ink']};
+  const [ic,color]=map[type]||map.info;
+  const el=document.createElement('div');
+  el.className='border-2 bg-card shadow-hard p-3.5 flex gap-3 items-start';
+  el.style.borderColor=`var(--${color})`;
+  el.innerHTML=`<i data-lucide="${ic}" class="w-4 h-4 mt-0.5 shrink-0" style="color:var(--${color})"></i>
+    <div class="min-w-0 flex-1"><div class="text-[12.5px] font-bold leading-tight">${title}</div>
+    <div class="text-[12px] text-muted mt-0.5 leading-snug">${msg}</div></div>
+    <button class="text-muted hover:text-ink shrink-0" onclick="this.parentElement.remove()"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>`;
+  $('#toasts').appendChild(el);lucide.createIcons();
+  setTimeout(()=>{el.style.transition='opacity .3s';el.style.opacity='0';setTimeout(()=>el.remove(),320)},4200);
+}
+
+/* — consola de acceso — */
+let bootRunning=false;
+async function typeLine(container,text,delay=0){
+  await new Promise(r=>setTimeout(r,delay));
+  const line=document.createElement('div');
+  line.className='boot-line';
+  container.appendChild(line);
+  for(let i=0;i<text.length;i++){
+    line.textContent=text.slice(0,i+1);
+    await new Promise(r=>setTimeout(r,10));
+  }
+}
+function openBoot(){
+  if(bootRunning)return;bootRunning=true;
+  const b=$('#boot');b.classList.remove('hidden');
+  document.body.style.overflow='hidden';
+  const log=$('#bootLog');log.innerHTML='';$('#bootPanel').classList.add('hidden');
+  const lines=[
+    '> QUALITYTRACK v1.0 — MÓDULO DE PRODUCCIÓN',
+    '> VERIFICANDO SESIÓN .............. <span style="color:var(--accent)">OK</span>',
+    '> MONTANDO EXPEDIENTES ............ <span style="color:var(--accent)">6 ACTIVOS</span>',
+    '> SINCRONIZANDO BITÁCORA .......... <span style="color:var(--accent)">OK</span>',
+    '> PERFIL: PLANIFICACIÓN — L. GODOY'
+  ];
+  location.href = 'dashboard.html';  // o dashboard.html
+  (async()=>{
+    for(const l of lines)await typeLine(log,l,260);
+    log.insertAdjacentHTML('beforeend','<span class="cursor-blk"></span>');
+    setTimeout(()=>{$('#bootPanel').classList.remove('hidden');lucide.createIcons();bootRunning=false},450);
+  })();
+}
+function closeBoot(){
+  $('#boot').classList.add('hidden');
+  document.body.style.overflow='';
+  toast('ok','Acceso simulado','En el producto final, acá arranca tu sesión en el tablero de producción.');
+}
+addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#boot').classList.contains('hidden'))closeBoot()});
+
+lucide.createIcons();
+</script>
+</body>
+</html>

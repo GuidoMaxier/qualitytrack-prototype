@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QualityTrack — Trazabilidad de Producción</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2322262D'/%3E%3Ctext x='16' y='22' font-family='monospace' font-weight='bold' font-size='14' fill='%23FBFAF6' text-anchor='middle'%3EQT%3C/text%3E%3Crect x='23' y='23' width='9' height='9' fill='%23D9480F'/%3E%3C/svg%3E">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={theme:{extend:{
+  colors:{paper:'#F2EFE8',card:'#FBFAF6',line:'#DAD5C8',line2:'#C4BDAC',ink:'#22262D',muted:'#7B7565',accent:'#D9480F',ok:'#2E7D4F',warn:'#A8760E',danger:'#B23A2E'},
+  fontFamily:{sans:['Archivo','sans-serif'],mono:['"JetBrains Mono"','monospace']},
+  boxShadow:{hard:'6px 6px 0 0 rgba(34,38,45,0.12)'}
+}}}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{--ink:#22262D;--paper:#F2EFE8;--card:#FBFAF6;--line:#DAD5C8;--line2:#C4BDAC;--muted:#7B7565;--accent:#D9480F;--ok:#2E7D4F;--warn:#A8760E;--danger:#B23A2E}
+  body{background:var(--paper);color:var(--ink);font-family:'Archivo',sans-serif}
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:linear-gradient(rgba(34,38,45,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(34,38,45,.035) 1px,transparent 1px);
+    background-size:26px 26px}
+  .disp{font-stretch:114%}
+  .xdisp{font-stretch:124%}
+  .kicker{font:600 10px 'JetBrains Mono';letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+  .cellhead{font:600 9.5px 'JetBrains Mono';letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .stamp{position:relative;display:inline-block;border:1.5px solid currentColor;padding:.4rem .8rem;font:700 11px 'JetBrains Mono';letter-spacing:.18em;text-transform:uppercase}
+  .stamp::after{content:'';position:absolute;inset:2px;border:1px solid currentColor;opacity:.45;pointer-events:none}
+  .tag{display:inline-block;border:1px solid currentColor;padding:.18rem .5rem;font:600 9.5px/1.4 'JetBrains Mono';letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border:1.5px solid var(--ink);padding:.55rem .95rem;font:600 10.5px 'JetBrains Mono';letter-spacing:.14em;text-transform:uppercase;background:var(--card);color:var(--ink);cursor:pointer;transition:all .15s}
+  .btn:hover{background:var(--ink);color:var(--paper)}
+  .btn-acc{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn-acc:hover{background:#A83A0B;border-color:#A83A0B;color:#fff}
+  .btn-sm{padding:.35rem .6rem;font-size:9.5px}
+  .btn:disabled{opacity:.4;pointer-events:none}
+  .th{font:600 9.5px 'JetBrains Mono';letter-spacing:.18em;text-transform:uppercase;color:var(--muted);padding:.8rem 1rem;border-bottom:2px solid var(--ink);white-space:nowrap}
+  .td{padding:.8rem 1rem;vertical-align:middle}
+  .cm{position:absolute;width:13px;height:13px;pointer-events:none}
+  .cm-tl{top:-5px;left:-5px;border-top:2px solid var(--ink);border-left:2px solid var(--ink)}
+  .cm-tr{top:-5px;right:-5px;border-top:2px solid var(--ink);border-right:2px solid var(--ink)}
+  .cm-bl{bottom:-5px;left:-5px;border-bottom:2px solid var(--ink);border-left:2px solid var(--ink)}
+  .cm-br{bottom:-5px;right:-5px;border-bottom:2px solid var(--ink);border-right:2px solid var(--ink)}
+  @keyframes pulseNode{0%{box-shadow:0 0 0 0 rgba(217,72,15,.4)}70%{box-shadow:0 0 0 7px rgba(217,72,15,0)}100%{box-shadow:0 0 0 0 rgba(217,72,15,0)}}
+  .node-live{animation:pulseNode 2s infinite}
+  @keyframes tin{from{transform:translateX(18px);opacity:0}to{transform:none;opacity:1}}
+  .toast{animation:tin .25s ease}
+  @keyframes pop{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
+  .sheet{animation:pop .16s ease}
+  .scroll-slim::-webkit-scrollbar{width:8px;height:8px}
+  .scroll-slim::-webkit-scrollbar-thumb{background:var(--line2)}
+  .scroll-slim::-webkit-scrollbar-track{background:transparent}
+  .doc-sheet{background:#fff;box-shadow:0 30px 70px -25px rgba(0,0,0,.55)}
+  .rowgo{transition:transform .15s}
+  tr:hover .rowgo{transform:translateX(4px)}
+  input,select,textarea{font-family:'Archivo',sans-serif}
+  .fld{width:100%;border:1.5px solid var(--line2);background:var(--card);padding:.55rem .75rem;font-size:13px;outline:none;transition:border-color .15s}
+  .fld:focus{border-color:var(--ink)}
+</style>
+</head>
+<body class="min-h-screen">
+
+<header class="sticky top-0 z-40 bg-card/95 backdrop-blur border-b-2 border-ink">
+  <div class="max-w-[1440px] mx-auto px-4 lg:px-8 h-[64px] flex items-center gap-4 lg:gap-6">
+    <button onclick="setView('board')" class="flex items-center gap-3 shrink-0">
+      <div class="w-9 h-9 bg-ink relative shrink-0">
+        <span class="absolute inset-0 grid place-items-center text-paper mono font-bold text-[14px]">QT</span>
+        <span class="absolute right-0 bottom-0 w-3 h-3 bg-accent"></span>
+      </div>
+      <div class="text-left leading-none hidden sm:block">
+        <div class="font-extrabold xdisp tracking-tight text-[17px]">QUALITYTRACK</div>
+        <div class="kicker mt-1" style="font-size:8.5px">TRAZABILIDAD · MECANIZADO</div>
+      </div>
+    </button>
+    <nav class="hidden md:flex items-stretch gap-1 ml-2 h-[64px]" id="navTabs"></nav>
+    <div class="flex-1"></div>
+    <div class="relative hidden sm:block">
+      <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted"></i>
+      <input id="gSearch" autocomplete="off" oninput="gSearchInput(this.value)" onfocus="gSearchInput(this.value)"
+        placeholder="Buscar OT · cliente · pieza · colada…"
+        class="w-[230px] lg:w-[330px] bg-paper border border-line2 focus:border-ink outline-none pl-9 pr-3 py-2 text-[13px] placeholder:text-muted/70">
+    </div>
+    <div class="hidden lg:block text-right leading-tight border-l border-line pl-5">
+      <div id="clock" class="mono text-[12px] font-semibold">--:--:--</div>
+      <div class="kicker" style="font-size:8.5px">L. GODOY · PLANIFICACIÓN</div>
+    </div>
+  </div>
+</header>
+
+<main id="app" class="relative z-10 max-w-[1440px] mx-auto px-4 lg:px-8 py-7"></main>
+
+<div id="docOverlay" class="fixed inset-0 z-50 hidden"></div>
+<div id="modalRoot" class="fixed inset-0 z-[60] hidden"></div>
+<div id="searchDrop" class="fixed z-50 hidden w-[400px] max-w-[92vw] border-2 border-ink bg-card shadow-hard overflow-hidden"></div>
+<div id="toasts" class="fixed z-[70] bottom-5 right-5 flex flex-col gap-2.5 w-[350px] max-w-[calc(100vw-40px)]"></div>
+
+<script>
+/* ================================================================
+   QUALITYTRACK — prototipo funcional de trazabilidad de producción
+   ================================================================ */
+
+/* ---------- utilidades ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const pad=n=>String(n).padStart(2,'0');
+function ts(){const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`}
+function fdate(s){if(!s)return '—';const p=s.split('-');return `${p[2]}.${p[1]}.${p[0]}`}
+function fmoney(n){return '$ '+Number(n).toLocaleString('es-AR')}
+function hash(s){let h=0x811c9dc5;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,0x01000193)>>>0}return h.toString(16).padStart(8,'0')+'f3a2'}
+const USER='L. Godoy · Planificación';
+
+const ST={
+  COT_PEND:{l:'COTIZACIÓN PENDIENTE',c:'warn'}, COT_APR:{l:'COTIZACIÓN APROBADA',c:'ok'},
+  EN_PRODUCCION:{l:'EN PRODUCCIÓN',c:'accent'}, EN_CALIDAD:{l:'EN CONTROL DE CALIDAD',c:'ink'},
+  NC:{l:'NC ABIERTA',c:'danger'}, LISTA:{l:'LISTA PARA ENTREGA',c:'ok'},
+  ENTREGADA:{l:'ENTREGADA',c:'muted'}, CONVERTIDA:{l:'CONVERTIDA A OT',c:'muted'}
+};
+const tag=k=>{const m=ST[k];return `<span class="tag" style="color:var(--${m.c})">${m.l}</span>`};
+
+const DT={
+  PLANO:{a:'PLN',ic:'drafting-compass'},CERT:{a:'CRT',ic:'flask-conical'},OC:{a:'OCT',ic:'clipboard-list'},
+  FAC:{a:'FAC',ic:'receipt'},REM:{a:'REM',ic:'package-check'},SOL:{a:'SOL',ic:'mail'},
+  COTD:{a:'COT',ic:'file-text'},QC:{a:'QC',ic:'shield-check'},INF:{a:'INF',ic:'file-text'},ADJ:{a:'ADJ',ic:'paperclip'}
+};
+const STAGE_L={sol:'SOLICITUD',cot:'COTIZACIÓN',ot:'ORDEN DE TRABAJO',ruta:'HOJA DE RUTA',cal:'CALIDAD',ent:'ENTREGA'};
+const STAGES=[['sol','01','SOLICITUD'],['cot','02','COTIZACIÓN'],['ot','03','ORDEN DE TRABAJO'],['ruta','04','HOJA DE RUTA'],['cal','05','CONTROL DE CALIDAD'],['ent','06','ENTREGA']];
+
+let dseq=1;
+const mkDoc=(type,title,stage,viewer,extra={})=>Object.assign({id:'D'+(dseq++),type,title,stage,viewer,ts:'2025-06-02 09:15',rev:'—'},extra);
+
+/* ---------- plantillas de hoja de ruta y plan de inspección ---------- */
+const ROUTING={
+  flange:[
+    ['Corte de materia prima','Sierra cinta HEM 260',45,'R. Suárez'],
+    ['Torneado OD y caras','Torno CNC Gildemeister',120,'M. Ibarra'],
+    ['Torneado interior y frente','Torno CNC Gildemeister',90,'R. Suárez'],
+    ['Fresado de ranuras de unión','Centro mecanizado Haas VF-4',75,'M. Ibarra'],
+    ['Taladrado PCD 6× Ø24','Taladro radial Ferrari 1.6 m',40,'J. Paredes'],
+    ['Debaste y limpieza','Banco — prensa',25,'J. Paredes'],
+    ['Inspección dimensional final','Mesa de control',30,'A. Ríos']],
+  shaft:[
+    ['Corte de materia prima','Sierra cinta HEM 260',30,'R. Suárez'],
+    ['Torneado de extremos y centros','Torno paralelo SOP-500',70,'R. Suárez'],
+    ['Torneado de perfil CNC','Torno CNC Gildemeister',110,'M. Ibarra'],
+    ['Fresado de chavetero','Fresadora Bridgeport',45,'M. Ibarra'],
+    ['Rectificado cilíndrico','Rectificadora R-320',60,'C. Ferrer'],
+    ['Inspección dimensional final','Mesa de control',30,'A. Ríos']],
+  plate:[
+    ['Corte de blank','Plasma CNC Hypertherm',35,'J. Paredes'],
+    ['Fresado de caras','Centro mecanizado Haas VF-4',60,'M. Ibarra'],
+    ['Taladrado de pasadas y ranura','Centro mecanizado Haas VF-4',50,'M. Ibarra'],
+    ['Ajuste, debaste y marcado','Banco — prensa',25,'J. Paredes'],
+    ['Inspección dimensional final','Mesa de control',25,'A. Ríos']]
+};
+const mkRouting=kind=>ROUTING[kind].map((r,i)=>({n:(i+1)*10,op:r[0],machine:r[1],std:r[2],operator:r[3],state:'PEND',actual:null,startMs:null}));
+const setRouting=(kind,ovs)=>{const rt=mkRouting(kind);ovs.forEach((v,i)=>{Object.assign(rt[i],{state:v[0],actual:v[1]??null,startMs:v[0]==='RUN'?Date.now()-23*60000:null})});return rt};
+
+const QPLANS={
+  flange:[['QL-01','Control dimensional general','Según plano · ISO 2768-mK','Calibre, micrómetro, comparador'],
+          ['QL-02','Dureza superficial','40–44 HRC','Durómetro Rockwell'],
+          ['QL-03','Inspección visual y acabado','Sin rebabas ni marcas de herramienta','Visual — lupa 10×']],
+  shaft:[['QL-01','Control dimensional general','Según plano · ajustes k6','Micrómetro, maura'],
+         ['QL-02','Dureza tras tratamiento','58–62 HRC','Durómetro Rockwell'],
+         ['QL-03','Acabado superficial rectificado','Ra ≤ 0.8 µm en asientos','Rugosímetro']],
+  plate:[['QL-01','Control dimensional general','Según plano · posiciones de pasadas','Calibre cota, galga'],
+         ['QL-02','Rugosidad y planitud','Ra ≤ 3.2 µm · planitud 0.05 mm','Rugosímetro, mármol'],
+         ['QL-03','Inspección visual','Sin rebabas — marcado legible','Visual']]
+};
+const mkQPlan=kind=>QPLANS[kind].map(p=>[...p]);
+
+/* ---------- datos semilla (expedientes) ---------- */
+const OTS=[];
+
+/* OT-2025-0104 · EN PRODUCCIÓN (flanza, AISI 4140) */
+{
+const o={id:'OT-2025-0104',kind:'OT',status:'EN_PRODUCCION',
+ client:{name:'Metalúrgica Delta S.A.',code:'CLI-014',contact:'Ing. M. Ferrer',email:'compras@metaldelta.com.ar'},
+ part:{name:'Flanza de acople Ø220',kind:'flange',dwg:'FL-1204',rev:'C',material:'AISI 4140',matStd:'EN 10204 · 3.1',heat:'88412',qty:12,due:'2025-06-20'},
+ request:{ref:'RFQ-2214',received:'2025-06-02',by:'Área Comercial',channel:'Correo electrónico',
+  text:'Necesitamos la fabricación de 12 flanzas de acople según plano adjunto para línea de bombas serie 400. Material AISI 4140 con temple y revenido. Entrega requerida: 20/06. La certificación 3.1 de materia prima es requisito obligatorio de recepción.'},
+ quote:{number:'COT-2025-0311',date:'2025-06-03',valid:'15 días',status:'APROBADA',
+  items:[{d:'Flanza de acople Ø220 — AISI 4140, c/ tratamiento 40–44 HRC, según plano FL-1204 rev.C',q:12,u:214500}],total:2574000,
+  approvedBy:'Ing. M. Ferrer (cliente)',approvedTs:'2025-06-04 10:22'},
+ production:{started:'2025-06-05 07:30',releasedBy:'L. Godoy',priority:'ALTA',machine:'Torno CNC Gildemeister · Centro Haas VF-4',
+  notes:['Verificar dureza tras tratamiento antes de continuar la secuencia.','Conservar identificación de colada en cada pieza hasta la inspección final.','Entregar con lazo de identificación individual por pieza.']},
+ routing:setRouting('flange',[['DONE',52],['DONE',118],['DONE',96],['RUN']]),
+ quality:{plan:mkQPlan('flange'),records:[],ncs:[]},
+ docs:[
+  mkDoc('SOL','Solicitud de cliente RFQ-2214','sol','note',{ts:'2025-06-02 08:41',stamp:'RECIBIDO',signedBy:'Área Comercial',
+    body:['Solicitud recibida por correo electrónico del cliente Metalúrgica Delta S.A. con plano FL-1204 rev.C adjunto.','Requerimiento: 12 flanzas de acople en AISI 4140 con certificación 3.1. Entrega comprometida: 20.06.2025.']}),
+  mkDoc('PLANO','Plano FL-1204 rev.C — Flanza de acople','sol','flange',{rev:'C',ts:'2025-06-02 08:45'}),
+  mkDoc('COTD','Cotización COT-2025-0311','cot','comercial',{subtype:'COT',num:'COT-2025-0311',ts:'2025-06-03 16:05'})
+ ],
+ log:[
+  {ts:'2025-06-02 08:41',actor:'Comercial — P. Lanza',text:'Solicitud de cliente recibida (RFQ-2214) por correo electrónico.'},
+  {ts:'2025-06-02 08:45',actor:'Ingeniería',text:'Plano FL-1204 rev.C adjuntado al expediente.'},
+  {ts:'2025-06-03 16:05',actor:'Comercial — P. Lanza',text:'Cotización COT-2025-0311 emitida y enviada al cliente.'},
+  {ts:'2025-06-04 10:22',actor:'Cliente — Ing. M. Ferrer',text:'Cotización aprobada. Orden de compra OC-4412 recibida.'},
+  {ts:'2025-06-04 11:30',actor:'Compras',text:'Certificado de materia prima 3.1 — colada 88412 incorporado al expediente.'},
+  {ts:'2025-06-05 07:30',actor:'Planificación — L. Godoy',text:'Orden de Trabajo liberada a producción. Materia prima asignada (colada 88412).'},
+  {ts:'2025-06-05 07:58',actor:'Producción — R. Suárez',text:'Operación 10 completada (Corte de materia prima) — 52 min / 45 std.'},
+  {ts:'2025-06-05 10:12',actor:'Producción — M. Ibarra',text:'Operación 20 completada (Torneado OD y caras) — 118 min / 120 std.'},
+  {ts:'2025-06-05 13:47',actor:'Producción — R. Suárez',text:'Operación 30 completada (Torneado interior y frente) — 96 min / 90 std.'},
+  {ts:'2025-06-06 08:05',actor:'Producción — M. Ibarra',text:'Operación 40 iniciada en Centro mecanizado Haas VF-4.'}
+ ]};
+o.docs.push(mkDoc('CERT','Certificado de materia prima — Colada 88412','ot','cert',{ts:'2025-06-04 11:30'}));
+o.docs.push(mkDoc('OC','Orden de compra OC-4412 — Metalúrgica Delta','ot','comercial',{subtype:'OC',num:'OC-4412',from:'Metalúrgica Delta S.A.',ts:'2025-06-04 10:25'}));
+OTS.push(o);
+}
+
+/* OT-2025-0103 · EN CONTROL DE CALIDAD (eje, 42CrMo4) */
+{
+const o={id:'OT-2025-0103',kind:'OT',status:'EN_CALIDAD',
+ client:{name:'AgroParts Ltd.',code:'CLI-022',contact:'Rta. Compras — S. Molina',email:'smolina@agroparts.com'},
+ part:{name:'Eje excéntrico',kind:'shaft',dwg:'EX-0451',rev:'A',material:'42CrMo4',matStd:'EN 10204 · 3.1',heat:'88399',qty:4,due:'2025-06-18'},
+ request:{ref:'RFQ-2201',received:'2025-05-26',by:'Área Comercial',channel:'Portal de proveedores',
+  text:'Fabricación de 4 ejes excéntricos para cabezal de cosechadora según plano EX-0451. Material 42CrMo4 con endurecimiento por inducción en zonas indicadas. Se requiere trazabilidad de colada y reporte de dureza.'},
+ quote:{number:'COT-2025-0298',date:'2025-05-27',valid:'20 días',status:'APROBADA',
+  items:[{d:'Eje excéntrico — 42CrMo4, c/ endurecimiento por inducción, según plano EX-0451 rev.A',q:4,u:192000}],total:768000,
+  approvedBy:'Rta. Compras — S. Molina (cliente)',approvedTs:'2025-05-29 09:40'},
+ production:{started:'2025-06-02 07:00',releasedBy:'L. Godoy',priority:'NORMAL',machine:'Torno CNC Gildemeister · Rectificadora R-320',
+  notes:['Proteger zonas endurecidas durante manipuleo.','Registrar tiempo real por operación en hoja de ruta.']},
+ routing:setRouting('shaft',[['DONE',33],['DONE',74],['DONE',121],['DONE',41],['DONE',58],['DONE',27]]),
+ quality:{plan:mkQPlan('shaft'),
+  records:[{code:'QL-01',result:'OK',inspector:'A. Ríos',notes:'Dimensional conforme en las 4 piezas. Primer artículo OK.',ts:'2025-06-09 11:20'}],ncs:[]},
+ docs:[
+  mkDoc('SOL','Solicitud de cliente RFQ-2201','sol','note',{ts:'2025-05-26 10:12',stamp:'RECIBIDO',signedBy:'Área Comercial',
+    body:['Solicitud recibida por portal de proveedores de AgroParts Ltd.','Requerimiento: 4 ejes excéntricos 42CrMo4 con reporte de dureza y trazabilidad de colada.']}),
+  mkDoc('PLANO','Plano EX-0451 rev.A — Eje excéntrico','sol','shaft',{rev:'A',ts:'2025-05-26 10:20'}),
+  mkDoc('COTD','Cotización COT-2025-0298','cot','comercial',{subtype:'COT',num:'COT-2025-0298',ts:'2025-05-27 15:30'}),
+  mkDoc('CERT','Certificado de materia prima — Colada 88399','ot','cert',{ts:'2025-05-30 09:05'}),
+  mkDoc('OC','Orden de compra OC-4436 — AgroParts','ot','comercial',{subtype:'OC',num:'OC-4436',from:'AgroParts Ltd.',ts:'2025-05-29 09:45'})
+ ],
+ log:[
+  {ts:'2025-05-26 10:12',actor:'Comercial — P. Lanza',text:'Solicitud de cliente recibida (RFQ-2201) por portal de proveedores.'},
+  {ts:'2025-05-29 09:40',actor:'Cliente — S. Molina',text:'Cotización aprobada. OC-4436 emitida por el cliente.'},
+  {ts:'2025-06-02 07:00',actor:'Planificación — L. Godoy',text:'Orden de Trabajo liberada a producción.'},
+  {ts:'2025-06-06 16:20',actor:'Producción — C. Ferrer',text:'Operación 50 completada (Rectificado cilíndrico) — 58 min / 60 std.'},
+  {ts:'2025-06-08 09:10',actor:'Producción — A. Ríos',text:'Operación 60 completada. Hoja de ruta finalizada — lote enviado a Control de Calidad.'},
+  {ts:'2025-06-09 11:20',actor:'Calidad — A. Ríos',text:'Inspección registrada: QL-01 — CONFORME. Pendiente QL-02 (dureza) y QL-03.'}
+ ]};
+OTS.push(o);
+}
+
+/* OT-2025-0102 · LISTA PARA ENTREGA (soporte, 316L) */
+{
+const o={id:'OT-2025-0102',kind:'OT',status:'LISTA',
+ client:{name:'HidroSur S.R.L.',code:'CLI-007',contact:'Of. Técnica — D. Aguirre',email:'otecnica@hidrosur.com.ar'},
+ part:{name:'Soporte de bomba',kind:'plate',dwg:'SB-0779',rev:'B',material:'AISI 316L',matStd:'EN 10204 · 3.1',heat:'88020',qty:25,due:'2025-06-12'},
+ request:{ref:'RFQ-2196',received:'2025-05-20',by:'Área Comercial',channel:'Correo electrónico',
+  text:'Reposición anual de 25 soportes de bomba según plano SB-0779 rev.B. Material 316L para servicio con cloruros. Acabado pasivado no requerido.'},
+ quote:{number:'COT-2025-0287',date:'2025-05-21',valid:'15 días',status:'APROBADA',
+  items:[{d:'Soporte de bomba — AISI 316L, según plano SB-0779 rev.B',q:25,u:61200}],total:1530000,
+  approvedBy:'Of. Técnica — D. Aguirre (cliente)',approvedTs:'2025-05-23 12:10'},
+ production:{started:'2025-05-27 07:00',releasedBy:'L. Godoy',priority:'NORMAL',machine:'Centro mecanizado Haas VF-4',
+  notes:['Separar material 316L de herramientas de acero al carbono para evitar contaminación.']},
+ routing:setRouting('plate',[['DONE',38],['DONE',57],['DONE',46],['DONE',22],['DONE',24]]),
+ quality:{plan:mkQPlan('plate'),
+  records:[{code:'QL-01',result:'OK',inspector:'A. Ríos',notes:'Posiciones y cotas conforme en muestra de 5/25.',ts:'2025-06-07 10:05'},
+           {code:'QL-02',result:'OK',inspector:'A. Ríos',notes:'Rugosidad y planitud conformes.',ts:'2025-06-07 10:40'},
+           {code:'QL-03',result:'OK',inspector:'A. Ríos',notes:'Visual conforme. Marcado legible en las 25 piezas.',ts:'2025-06-07 11:02'}],ncs:[]},
+ docs:[
+  mkDoc('SOL','Solicitud de cliente RFQ-2196','sol','note',{ts:'2025-05-20 09:30',stamp:'RECIBIDO',signedBy:'Área Comercial',
+    body:['Reposición anual de 25 soportes de bomba en 316L según plano SB-0779 rev.B.']}),
+  mkDoc('PLANO','Plano SB-0779 rev.B — Soporte de bomba','sol','plate',{rev:'B',ts:'2025-05-20 09:40'}),
+  mkDoc('COTD','Cotización COT-2025-0287','cot','comercial',{subtype:'COT',num:'COT-2025-0287',ts:'2025-05-21 14:20'}),
+  mkDoc('CERT','Certificado de materia prima — Colada 88020','ot','cert',{ts:'2025-05-23 16:00'}),
+  mkDoc('OC','Orden de compra OC-4421 — HidroSur','ot','comercial',{subtype:'OC',num:'OC-4421',from:'HidroSur S.R.L.',ts:'2025-05-23 12:15'}),
+  mkDoc('QC','Certificado interno de conformidad CI-0254','cal','qcert',{num:'CI-0254',ts:'2025-06-07 11:30'})
+ ],
+ log:[
+  {ts:'2025-05-20 09:30',actor:'Comercial — P. Lanza',text:'Solicitud de cliente recibida (RFQ-2196).'},
+  {ts:'2025-05-27 07:00',actor:'Planificación — L. Godoy',text:'Orden de Trabajo liberada a producción.'},
+  {ts:'2025-06-06 15:40',actor:'Producción — M. Ibarra',text:'Hoja de ruta finalizada — lote enviado a Control de Calidad.'},
+  {ts:'2025-06-07 11:02',actor:'Calidad — A. Ríos',text:'Plan de inspección completo: QL-01, QL-02 y QL-03 conformes.'},
+  {ts:'2025-06-07 11:30',actor:'Calidad — A. Ríos',text:'Lote de 25 piezas liberado para entrega. Certificado interno CI-0254 emitido.'}
+ ]};
+OTS.push(o);
+}
+
+/* OT-2025-0101 · ENTREGADA (expediente cerrado, demo de reconstrucción histórica) */
+{
+const o={id:'OT-2025-0101',kind:'OT',status:'ENTREGADA',
+ client:{name:'Metalúrgica Delta S.A.',code:'CLI-014',contact:'Ing. M. Ferrer',email:'compras@metaldelta.com.ar'},
+ part:{name:'Flanza de acople Ø180',kind:'flange',dwg:'FL-1180',rev:'B',material:'C45',matStd:'EN 10204 · 3.1',heat:'87902',qty:30,due:'2025-05-28'},
+ request:{ref:'RFQ-2189',received:'2025-04-22',by:'Área Comercial',channel:'Correo electrónico',
+  text:'Fabricación de 30 flanzas de acople Ø180 según plano FL-1180 rev.B para stock de mantenimiento. Material C45. Entrega antes de fin de mayo.'},
+ quote:{number:'COT-2025-0267',date:'2025-04-23',valid:'15 días',status:'APROBADA',
+  items:[{d:'Flanza de acople Ø180 — C45, según plano FL-1180 rev.B',q:30,u:92000}],total:2760000,
+  approvedBy:'Ing. M. Ferrer (cliente)',approvedTs:'2025-04-25 11:05'},
+ production:{started:'2025-04-29 07:00',releasedBy:'L. Godoy',priority:'NORMAL',machine:'Torno CNC Gildemeister · Taladro radial',
+  notes:['Lote dividido en 2 sublotes de 15 para programación de tornos.']},
+ routing:setRouting('flange',[['DONE',48],['DONE',112],['DONE',88],['DONE',0],['DONE',36],['DONE',20],['DONE',28]].map((v,i)=>i===3?['DONE',71]:v)),
+ quality:{plan:mkQPlan('flange'),
+  records:[{code:'QL-01',result:'OK',inspector:'A. Ríos',notes:'Dimensional conforme. Muestreo 8/30 + primeros y últimos.',ts:'2025-05-23 10:30'},
+           {code:'QL-02',result:'OK',inspector:'A. Ríos',notes:'Dureza conforme 42 HRC promedio.',ts:'2025-05-23 11:10'},
+           {code:'QL-03',result:'OK',inspector:'A. Ríos',notes:'Visual y acabado conformes.',ts:'2025-05-23 11:35'}],ncs:[]},
+ delivery:{remito:'REM-2025-0188',date:'2025-05-27',receivedBy:'Almacén — Metalúrgica Delta'},
+ docs:[
+  mkDoc('SOL','Solicitud de cliente RFQ-2189','sol','note',{ts:'2025-04-22 08:55',stamp:'RECIBIDO',signedBy:'Área Comercial',
+    body:['Solicitud de 30 flanzas Ø180 en C45 según plano FL-1180 rev.B para stock de mantenimiento.']}),
+  mkDoc('PLANO','Plano FL-1180 rev.B — Flanza de acople','sol','flange',{rev:'B',ts:'2025-04-22 09:05'}),
+  mkDoc('COTD','Cotización COT-2025-0267','cot','comercial',{subtype:'COT',num:'COT-2025-0267',ts:'2025-04-23 15:45'}),
+  mkDoc('CERT','Certificado de materia prima — Colada 87902','ot','cert',{ts:'2025-04-25 14:20'}),
+  mkDoc('OC','Orden de compra OC-4388 — Metalúrgica Delta','ot','comercial',{subtype:'OC',num:'OC-4388',from:'Metalúrgica Delta S.A.',ts:'2025-04-25 11:10'}),
+  mkDoc('QC','Certificado interno de conformidad CI-0241','cal','qcert',{num:'CI-0241',ts:'2025-05-23 12:00'}),
+  mkDoc('REM','Remito REM-2025-0188','ent','comercial',{subtype:'REM',num:'REM-2025-0188',receivedBy:'Almacén — Metalúrgica Delta',ts:'2025-05-27 16:30'}),
+  mkDoc('FAC','Factura A 0021-00457','ent','comercial',{subtype:'FAC',num:'A 0021-00457',ts:'2025-05-27 16:35'})
+ ],
+ log:[
+  {ts:'2025-04-22 08:55',actor:'Comercial — P. Lanza',text:'Solicitud de cliente recibida (RFQ-2189).'},
+  {ts:'2025-04-25 11:05',actor:'Cliente — Ing. M. Ferrer',text:'Cotización aprobada. OC-4388 recibida.'},
+  {ts:'2025-04-29 07:00',actor:'Planificación — L. Godoy',text:'Orden de Trabajo liberada a producción.'},
+  {ts:'2025-05-21 14:15',actor:'Producción — M. Ibarra',text:'Hoja de ruta finalizada — lote enviado a Control de Calidad.'},
+  {ts:'2025-05-23 12:00',actor:'Calidad — A. Ríos',text:'Plan de inspección completo conforme. Lote liberado (CI-0241).'},
+  {ts:'2025-05-27 16:30',actor:'Despacho — V. Sanz',text:'Entrega registrada. Remito REM-2025-0188 firmado por el cliente.'},
+  {ts:'2025-05-27 16:35',actor:'Administración',text:'Factura A 0021-00457 emitida y vinculada al expediente. Expediente cerrado.'}
+ ]};
+OTS.push(o);
+}
+
+/* COT-2025-0089 · cotización pendiente */
+OTS.push({
+ id:'COT-2025-0089',kind:'COT',status:'COT_PEND',
+ client:{name:'TecnoFer S.A.',code:'CLI-031',contact:'Ing. R. Kaufmann',email:'rkaufmann@tecnofer.com'},
+ part:{name:'Carcasa de rodamiento PCM-40',kind:'plate',dwg:'CR-0902',rev:'A',material:'GGG50',matStd:'A determinar',heat:'—',qty:40,due:'2025-07-15'},
+ request:{ref:'RFQ-2225',received:'2025-06-09',by:'Área Comercial',channel:'Correo electrónico',
+  text:'Consultamos por 40 carcasas de rodamiento PCM-40 según plano CR-0902 para nueva línea de transporte. Material fundición nodular GGG50. Solicitamos cotización con entrega parcial en dos lotes.'},
+ quote:{number:'COT-2025-0318',date:'2025-06-10',valid:'15 días',status:'PENDIENTE',
+  items:[{d:'Carcasa de rodamiento PCM-40 — GGG50, según plano CR-0902 rev.A',q:40,u:108000}],total:4320000},
+ docs:[
+  mkDoc('SOL','Solicitud de cliente RFQ-2225','sol','note',{ts:'2025-06-09 09:20',stamp:'RECIBIDO',signedBy:'Área Comercial',
+    body:['Consulta por 40 carcasas de rodamiento en GGG50 según plano CR-0902 rev.A. Entrega parcial en dos lotes.']}),
+  mkDoc('PLANO','Plano CR-0902 rev.A — Carcasa de rodamiento','sol','plate',{rev:'A',ts:'2025-06-09 09:30'}),
+  mkDoc('COTD','Cotización COT-2025-0318','cot','comercial',{subtype:'COT',num:'COT-2025-0318',ts:'2025-06-10 11:45'})
+ ],
+ log:[
+  {ts:'2025-06-09 09:20',actor:'Comercial — P. Lanza',text:'Solicitud de cliente recibida (RFQ-2225).'},
+  {ts:'2025-06-10 11:45',actor:'Comercial — P. Lanza',text:'Cotización COT-2025-0318 emitida. Pendiente de aprobación del cliente.'}
+ ]});
+
+/* COT-2025-0090 · cotización aprobada, lista para convertir en OT */
+OTS.push({
+ id:'COT-2025-0090',kind:'COT',status:'COT_APR',
+ client:{name:'AgroParts Ltd.',code:'CLI-022',contact:'Rta. Compras — S. Molina',email:'smolina@agroparts.com'},
+ part:{name:'Piñón M4 Z=21',kind:'shaft',dwg:'PN-0318',rev:'A',material:'20MnCr5',matStd:'A determinar',heat:'—',qty:8,due:'2025-07-04'},
+ request:{ref:'RFQ-2221',received:'2025-06-05',by:'Área Comercial',channel:'Correo electrónico',
+  text:'Necesitamos 8 piñones módulo 4 Z=21 según plano PN-0318 para reposición de equipos de cosecha. Material 20MnCr5 con cementado. Urgente: parada de línea.'},
+ quote:{number:'COT-2025-0315',date:'2025-06-05',valid:'10 días',status:'APROBADA',
+  items:[{d:'Piñón M4 Z=21 — 20MnCr5, cementado, según plano PN-0318 rev.A',q:8,u:246875}],total:1975000,
+  approvedBy:'Rta. Compras — S. Molina (cliente)',approvedTs:'2025-06-06 09:12'},
+ docs:[
+  mkDoc('SOL','Solicitud de cliente RFQ-2221','sol','note',{ts:'2025-06-05 08:10',stamp:'RECIBIDO',signedBy:'Área Comercial',
+    body:['Reposición urgente de 8 piñones M4 Z=21 en 20MnCr5 con cementado según plano PN-0318 rev.A.']}),
+  mkDoc('PLANO','Plano PN-0318 rev.A — Piñón M4 Z=21','sol','shaft',{rev:'A',ts:'2025-06-05 08:20'}),
+  mkDoc('COTD','Cotización COT-2025-0315','cot','comercial',{subtype:'COT',num:'COT-2025-0315',ts:'2025-06-05 13:50'}),
+  mkDoc('INF','Conformidad de cliente — COT-2025-0315','cot','note',{ts:'2025-06-06 09:12',stamp:'APROBADO',signedBy:'Área Comercial',
+    body:['El cliente AgroParts Ltd. aprueba la cotización COT-2025-0315 por la suma de $ 1.975.000.','La aprobación habilita la generación de la Orden de Trabajo correspondiente.']})
+ ],
+ log:[
+  {ts:'2025-06-05 08:10',actor:'Comercial — P. Lanza',text:'Solicitud de cliente recibida (RFQ-2221) — marcada urgente.'},
+  {ts:'2025-06-05 13:50',actor:'Comercial — P. Lanza',text:'Cotización COT-2025-0315 emitida.'},
+  {ts:'2025-06-06 09:12',actor:'Cliente — S. Molina',text:'Cotización aprobada por el cliente. Lista para generar Orden de Trabajo.'}
+ ]});
+
+/* ---------- estado de la app ---------- */
+const state={view:'board',current:null,filter:'TODOS',query:'',traceSel:'OT-2025-0101'};
+const uiStage={};
+const byId=id=>OTS.find(o=>o.id===id);
+let seqOT=105,seqCOT=91,seqRFQ=2226,seqNC=1,seqREM=190,seqCI=255,seqFAC=458;
+const stageFromStatus=o=>o.kind==='COT'?'cot':({EN_PRODUCCION:'ruta',NC:'ruta',EN_CALIDAD:'cal',LISTA:'ent',ENTREGADA:'ent'}[o.status]||'sol');
+function openFile(id){state.view='file';state.current=id;if(!uiStage[id])uiStage[id]=stageFromStatus(byId(id));render();scrollTo(0,0)}
+function setView(v){state.view=v;render();scrollTo(0,0)}
+function setStage(k){uiStage[state.current]=k;render()}
+function goTrace(id){state.traceSel=id;setView('trace')}
+function logEv(o,text,actor=USER){o.log.push({ts:ts(),actor,text,fresh:true})}
+
+/* ---------- componentes comunes ---------- */
+const docRow=(o,d)=>`<button onclick="viewDoc('${o.id}','${d.id}')" class="w-full flex items-center gap-3 border border-line bg-card hover:border-ink px-3 py-2.5 text-left transition-colors group">
+  <span class="mono text-[9px] font-bold w-8 h-8 grid place-items-center border border-line2 group-hover:border-ink shrink-0">${DT[d.type].a}</span>
+  <span class="min-w-0 flex-1"><span class="block text-[12px] font-semibold leading-tight truncate">${esc(d.title)}</span>
+  <span class="block mono text-[9.5px] text-muted mt-0.5">${STAGE_L[d.stage]} · ${d.ts} · REV ${d.rev}</span></span>
+  <i data-lucide="eye" class="w-3.5 h-3.5 text-muted shrink-0"></i></button>`;
+
+const stageDocList=(o,k)=>{const ds=o.docs.filter(d=>d.stage===k);if(!ds.length)return '';
+  return `<div class="mt-6"><div class="kicker mb-2.5">DOCUMENTACIÓN VINCULADA · ${ds.length}</div>
+  <div class="grid md:grid-cols-2 gap-2">${ds.map(d=>docRow(o,d)).join('')}</div></div>`};
+
+const sHead=(num,title,sub)=>`<div><div class="kicker mb-1">ETAPA ${num} / 06</div>
+  <h2 class="text-[22px] font-extrabold xdisp leading-none">${title}</h2>
+  ${sub?`<div class="text-[12.5px] text-muted mt-1.5">${sub}</div>`:''}</div>
+  <div class="h-px bg-ink mt-4 mb-5"></div>`;
+
+const opTag=s=>s==='DONE'?`<span class="tag" style="color:var(--ok)">COMPLETA</span>`
+  :s==='RUN'?`<span class="tag node-live" style="color:var(--accent)">● EN CURSO</span>`
+  :`<span class="tag" style="color:var(--muted)">PENDIENTE</span>`;
+
+const avanceCell=o=>{
+  if(o.routing&&o.kind==='OT'){
+    const seg=o.routing.map(x=>`<span class="w-2.5 h-2.5 inline-block ${x.state==='DONE'?'bg-ink':x.state==='RUN'?'bg-accent node-live':'border border-line2'}"></span>`).join('');
+    const d=o.routing.filter(x=>x.state==='DONE').length;
+    return `<div class="flex items-center gap-1">${seg}<span class="mono text-[10.5px] text-muted ml-2">${d}/${o.routing.length}</span></div>`;
+  }
+  if(o.status==='CONVERTIDA')return `<span class="mono text-[11px] text-muted">→ ${o.convertedTo}</span>`;
+  return `<span class="mono text-[11px] text-muted">—</span>`;
+};
+
+/* ================= VISTA: TABLERO ================= */
+function matchFilter(o){switch(state.filter){
+  case 'COT':return o.kind==='COT'||o.status==='CONVERTIDA';
+  case 'PROD':return o.status==='EN_PRODUCCION'||o.status==='NC';
+  case 'CAL':return o.status==='EN_CALIDAD';
+  case 'NC':return (o.quality?.ncs||[]).some(n=>n.state==='ABIERTA');
+  case 'ENT':return o.status==='ENTREGADA';
+  default:return true}}
+function matchQuery(o,q){return [o.id,o.part.name,o.client.name,o.part.material,o.part.heat,o.part.dwg,o.request.ref].join(' ').toLowerCase().includes(q)}
+
+function rowsHTML(){
+  const q=state.query.trim().toLowerCase();
+  const list=OTS.filter(o=>matchFilter(o)&&(!q||matchQuery(o,q)));
+  if(!list.length)return `<tr><td class="td text-center text-muted text-[12px]" colspan="8">Sin expedientes para el filtro actual.</td></tr>`;
+  return list.map(o=>`<tr onclick="openFile('${o.id}')" class="cursor-pointer border-b border-line/70 hover:bg-paper transition-colors">
+    <td class="td"><span class="mono font-bold text-[13px]">${o.id}</span>
+      <div class="mono text-[10px] text-muted mt-0.5">${esc(o.request.ref)} · ${o.kind==='OT'?'ORDEN DE TRABAJO':'COTIZACIÓN'}</div></td>
+    <td class="td">${esc(o.client.name)}<div class="mono text-[10px] text-muted mt-0.5">${o.client.code}</div></td>
+    <td class="td font-semibold">${esc(o.part.name)}<div class="mono text-[10px] text-muted mt-0.5">${o.part.dwg} · REV ${o.part.rev}</div></td>
+    <td class="td"><span class="mono text-[12px]">${esc(o.part.material)}</span><div class="mono text-[10px] text-muted mt-0.5">COLADA ${o.part.heat||'—'}</div></td>
+    <td class="td">${avanceCell(o)}</td>
+    <td class="td">${tag(o.status)}</td>
+    <td class="td text-right mono text-[12px]">${fdate(o.part.due)}</td>
+    <td class="td w-8"><i data-lucide="chevron-right" class="w-4 h-4 text-muted rowgo"></i></td></tr>`).join('');
+}
+
+function refreshRows(){$('#otRows').innerHTML=rowsHTML();lucide.createIcons()}
+function setFilter(f){state.filter=f;document.querySelectorAll('[data-f]').forEach(b=>{
+  const on=b.dataset.f===f;b.className='chipbtn'+(on?' chip-on':'')});refreshRows()}
+
+function renderBoard(){
+  const act=OTS.filter(o=>o.kind==='OT'&&o.status!=='ENTREGADA'&&o.status!=='CONVERTIDA').length;
+  const prod=OTS.filter(o=>['EN_PRODUCCION','NC'].includes(o.status)).length;
+  const cal=OTS.filter(o=>o.status==='EN_CALIDAD').length;
+  const nc=OTS.reduce((a,o)=>a+(o.quality?.ncs||[]).filter(n=>n.state==='ABIERTA').length,0);
+  const ent=OTS.filter(o=>o.status==='ENTREGADA').length;
+  const chips=[['TODOS','TODOS'],['COT','COTIZACIONES'],['PROD','EN PRODUCCIÓN'],['CAL','EN CALIDAD'],['NC','CON NC'],['ENT','ENTREGADOS']];
+  const dist=[['EN PRODUCCIÓN','accent',prod],['EN CALIDAD','ink',cal],['PENDIENTES','warn',OTS.filter(o=>o.kind==='COT').length],['ENTREGADAS','line2',ent]];
+  const distTotal=Math.max(1,dist.reduce((a,d)=>a+d[2],0));
+
+  $('#app').innerHTML=`
+  <div class="relative border-2 border-ink bg-card shadow-hard">
+    <span class="cm cm-tl"></span><span class="cm cm-tr"></span><span class="cm cm-bl"></span><span class="cm cm-br"></span>
+    <div class="grid grid-cols-2 md:grid-cols-5 divide-x divide-y md:divide-y-0 divide-line">
+      ${[['ÓRDENES ACTIVAS',act,'ink'],['EN PRODUCCIÓN',prod,'accent'],['EN CONTROL DE CALIDAD',cal,'ink'],['NO CONFORMIDADES ABIERTAS',nc,'danger'],['ENTREGADAS (HISTÓRICO)',ent,'ok']].map(c=>`
+        <div class="p-5"><div class="kicker">${c[0]}</div>
+        <div class="mono text-[34px] font-bold leading-none mt-2" style="color:var(--${c[2]})">${c[1]}</div></div>`).join('')}
+    </div>
+    <div class="border-t border-line px-5 py-3 flex flex-wrap items-center gap-x-6 gap-y-2.5">
+      <span class="kicker">DISTRIBUCIÓN DE ESTADOS</span>
+      <div class="flex h-2.5 flex-1 min-w-[180px] max-w-[420px] gap-px">
+        ${dist.map(d=>`<div style="flex:${d[2]||0.001};background:var(--${d[1]})"></div>`).join('')}
+      </div>
+      ${dist.map(d=>`<span class="flex items-center gap-1.5 mono text-[10px] text-muted">
+        <span class="w-2.5 h-2.5 inline-block" style="background:var(--${d[1]})"></span>${d[0]} · ${d[2]}</span>`).join('')}
+    </div>
+  </div>
+
+  <div class="flex flex-wrap items-end justify-between gap-4 mt-8 mb-5">
+    <div><div class="kicker mb-1.5">REGISTRO CENTRAL DE PRODUCCIÓN</div>
+      <h1 class="text-[30px] font-extrabold xdisp leading-none">Órdenes de trabajo</h1></div>
+    <div class="flex gap-2.5">
+      <button class="btn" onclick="exportRegistry()"><i data-lucide="download" class="w-3.5 h-3.5"></i>EXPORTAR REGISTRO</button>
+      <button class="btn btn-acc" onclick="setView('new')"><i data-lucide="plus" class="w-3.5 h-3.5"></i>NUEVA SOLICITUD</button>
+    </div>
+  </div>
+
+  <div class="border-2 border-ink bg-card shadow-hard overflow-hidden">
+    <div class="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-b border-line bg-paper">
+      <div class="flex flex-wrap gap-1.5">
+        ${chips.map(c=>`<button data-f="${c[0]}" onclick="setFilter('${c[0]}')" class="chipbtn${c[0]===state.filter?' chip-on':''}">${c[1]}</button>`).join('')}
+      </div>
+      <div class="relative">
+        <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted"></i>
+        <input oninput="state.query=this.value;refreshRows()" placeholder="Filtrar expedientes…"
+          class="bg-card border border-line2 focus:border-ink outline-none pl-8 pr-3 py-1.5 text-[12px] w-[220px]">
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-[13px]">
+        <thead><tr class="text-left bg-card">
+          <th class="th">OT / DOCUMENTO</th><th class="th">CLIENTE</th><th class="th">PIEZA</th>
+          <th class="th">MATERIAL</th><th class="th">AVANCE</th><th class="th">ESTADO</th>
+          <th class="th text-right">ENTREGA</th><th></th></tr></thead>
+        <tbody id="otRows">${rowsHTML()}</tbody>
+      </table>
+    </div>
+  </div>
+  <p class="kicker mt-3">CLIC EN UNA FILA PARA ABRIR EL EXPEDIENTE COMPLETO DEL TRABAJO</p>
+  <style>
+    .chipbtn{font:600 9.5px 'JetBrains Mono';letter-spacing:.14em;padding:.4rem .7rem;border:1px solid var(--line2);color:var(--muted);cursor:pointer;background:var(--card)}
+    .chipbtn:hover{border-color:var(--ink);color:var(--ink)}
+    .chip-on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+  </style>`;
+  lucide.createIcons();
+}
+
+function exportRegistry(){
+  const lines=['QUALITYTRACK — REGISTRO CENTRAL DE PRODUCCIÓN','Generado: '+ts(),'',
+    ...OTS.map(o=>[o.id,o.client.name,o.part.name+' ('+o.part.dwg+' rev.'+o.part.rev+')',o.part.material,'COLADA '+(o.part.heat||'—'),ST[o.status].l,
+      o.kind==='OT'?'Avance: '+o.routing.filter(x=>x.state==='DONE').length+'/'+o.routing.length:'','Docs: '+o.docs.length].join(' | '))];
+  const blob=new Blob([lines.join('\n')],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='qualitytrack-registro.txt';a.click();
+  toast('ok','Registro exportado','Se descargó qualitytrack-registro.txt con el estado de todos los expedientes.');
+}
+
+/* ================= VISTA: EXPEDIENTE ================= */
+const doneMap=o=>({'sol':2,
+  'cot':o.quote.status==='APROBADA'?2:1,
+  'ot':(o.kind==='OT'||o.status==='CONVERTIDA')?2:0,
+  'ruta':o.kind==='OT'?(o.routing.every(x=>x.state==='DONE')?2:1):0,
+  'cal':(['LISTA','ENTREGADA'].includes(o.status))?2:(['EN_CALIDAD','NC'].includes(o.status)?1:0),
+  'ent':o.status==='ENTREGADA'?2:0});
+
+function fileHeader(o){
+  const done=o.kind==='OT'?o.routing.filter(x=>x.state==='DONE').length:0;
+  const tot=o.routing?o.routing.length:0;
+  return `<div class="relative border-2 border-ink bg-card shadow-hard">
+    <span class="cm cm-tl"></span><span class="cm cm-tr"></span><span class="cm cm-bl"></span><span class="cm cm-br"></span>
+    <div class="grid grid-cols-2 md:grid-cols-12">
+      <div class="p-4 border-b md:border-r border-line md:col-span-3">
+        <div class="cellhead">${o.kind==='OT'?'ORDEN DE TRABAJO':'COTIZACIÓN'}</div>
+        <div class="text-[25px] font-extrabold xdisp leading-none mt-1.5">${o.id}</div>
+        <div class="mono text-[10px] text-muted mt-1.5">PLANO ${o.part.dwg} · REV ${o.part.rev}</div>
+      </div>
+      <div class="p-4 border-b md:border-r border-line md:col-span-3">
+        <div class="cellhead">PIEZA</div>
+        <div class="text-[15px] font-bold leading-tight mt-1.5">${esc(o.part.name)}</div>
+        <div class="mono text-[10px] text-muted mt-1">${esc(o.part.material)} · ${o.part.qty} PZ</div>
+      </div>
+      <div class="p-4 border-b md:border-r border-line md:col-span-2">
+        <div class="cellhead">CLIENTE</div>
+        <div class="text-[13px] font-semibold leading-snug mt-1.5">${esc(o.client.name)}</div>
+        <div class="mono text-[10px] text-muted mt-1">${o.client.code}</div>
+      </div>
+      <div class="p-4 border-b md:border-r border-line md:col-span-2">
+        <div class="cellhead">MATERIAL / COLADA</div>
+        <div class="mono text-[13px] font-semibold mt-1.5">${esc(o.part.material)}</div>
+        <div class="mono text-[10px] text-muted mt-1">COLADA ${o.part.heat||'—'} · ${esc(o.part.matStd)}</div>
+      </div>
+      <div class="p-4 border-b md:border-r border-line md:col-span-1">
+        <div class="cellhead">ENTREGA</div>
+        <div class="mono text-[15px] font-bold mt-1.5">${fdate(o.part.due)}</div>
+      </div>
+      <div class="p-4 md:col-span-1 flex flex-col items-start justify-center">
+        <span class="stamp -rotate-2" style="color:var(--${ST[o.status].c});font-size:9px">${ST[o.status].l}</span>
+      </div>
+    </div>
+    <div class="border-t border-line px-4 py-2.5 flex flex-wrap items-center gap-x-6 gap-y-2">
+      ${o.kind==='OT'?`<div class="flex items-center gap-1.5">${o.routing.map(x=>`<span class="w-3 h-3 inline-block ${x.state==='DONE'?'bg-ink':x.state==='RUN'?'bg-accent node-live':'border border-line2'}"></span>`).join('')}
+        <span class="mono text-[10.5px] text-muted ml-1.5">${done}/${tot} OPERACIONES</span></div>`
+       :`<span class="mono text-[10.5px] text-muted">EXPEDIENTE COMERCIAL — SIN OT GENERADA AÚN</span>`}
+      <span class="mono text-[10.5px] text-muted hidden md:inline">${o.docs.length} DOCUMENTOS VINCULADOS · ${o.log.length} EVENTOS EN BITÁCORA</span>
+      <button class="btn btn-sm ml-auto" onclick="goTrace('${o.id}')"><i data-lucide="scan-search" class="w-3 h-3"></i>CADENA DE TRAZABILIDAD</button>
+    </div>
+  </div>`;
+}
+
+function fileTimeline(o,cur){
+  const dm=doneMap(o);
+  return `<nav class="relative">
+    <div class="absolute left-[7px] top-3 bottom-3 w-px bg-line2"></div>
+    ${STAGES.map(([k,n,t])=>{const stg=dm[k],act=cur===k,nd=o.docs.filter(d=>d.stage===k).length;
+      const mark=stg===2?'bg-ink':stg===1?'bg-accent node-live':'bg-card border-[1.5px] border-line2';
+      const ring=act?(stg===1?'ring-2 ring-offset-2 ring-offset-card ring-accent':'ring-2 ring-offset-2 ring-offset-card ring-ink'):'';
+      return `<button onclick="setStage('${k}')" class="relative w-full text-left flex gap-3.5 items-start py-2.5 group">
+        <span class="relative z-10 mt-0.5 w-[15px] h-[15px] shrink-0 ${mark} ${ring}"></span>
+        <span class="min-w-0">
+          <span class="mono text-[9px] tracking-[.2em] ${act?'text-accent':'text-muted'}">ETAPA ${n}</span>
+          <span class="block text-[12.5px] font-bold leading-tight mt-0.5 group-hover:underline underline-offset-2 decoration-line2">${t}</span>
+          <span class="block mono text-[9.5px] text-muted mt-0.5">${stg===2?'COMPLETA':stg===1?'EN PROCESO':'PENDIENTE'} · ${nd} DOC${nd===1?'':'S'}</span>
+        </span></button>`}).join('')}
+  </nav>`;
+}
+
+function stageHTML(o,k){
+  const q=o.quote;
+  const itemsRows=q.items.map(it=>`<tr class="border-b border-line/70">
+      <td class="td text-[12.5px]">${esc(it.d)}</td>
+      <td class="td mono text-right text-[12px]">${it.q}</td>
+      <td class="td mono text-right text-[12px]">${fmoney(it.u)}</td>
+      <td class="td mono text-right text-[12px] font-semibold">${fmoney(it.q*it.u)}</td></tr>`).join('');
+
+  switch(k){
+  case 'sol':return `
+    ${sHead('01','Solicitud del cliente',`Registrada por ${esc(o.request.by)} · ${fdate(o.request.received)}`)}
+    <div class="border border-line border-l-[3px] border-l-accent bg-card px-5 py-4 text-[15px] leading-relaxed">“${esc(o.request.text)}”</div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line mt-4">
+      ${[['REFERENCIA',o.request.ref],['CANAL',o.request.channel],['CONTACTO',o.client.contact],['CORREO',o.client.email]].map(c=>`
+        <div class="bg-card p-3.5"><div class="cellhead">${c[0]}</div><div class="text-[12.5px] font-semibold mt-1 truncate">${esc(c[1])}</div></div>`).join('')}
+    </div>
+    ${stageDocList(o,'sol')}`;
+
+  case 'cot':return `
+    ${sHead('02','Cotización',`N° ${q.number} · emitida ${fdate(q.date)} · validez ${q.valid}`)}
+    <div class="grid lg:grid-cols-[1fr_290px] gap-5 items-start">
+      <div class="border border-ink bg-card overflow-x-auto">
+        <table class="w-full text-[13px] w-full">
+          <thead><tr class="text-left"><th class="th">DESCRIPCIÓN</th><th class="th text-right">CANT.</th><th class="th text-right">P. UNITARIO</th><th class="th text-right">SUBTOTAL</th></tr></thead>
+          <tbody>${itemsRows}</tbody>
+        </table>
+      </div>
+      <div class="flex flex-col gap-4">
+        <div class="border-2 border-ink bg-card p-4 text-center">
+          <div class="kicker">MONTO TOTAL</div>
+          <div class="mono text-[25px] font-bold mt-1.5">${fmoney(q.total)}</div>
+          <div class="mt-4">
+            ${q.status==='APROBADA'
+              ?`<span class="stamp" style="color:var(--ok)">APROBADA</span>
+                <div class="mono text-[10px] text-muted mt-2.5 leading-relaxed">POR ${esc(q.approvedBy)}<br>${q.approvedTs}</div>`
+              :`<span class="stamp" style="color:var(--warn)">PENDIENTE</span>`}
+          </div>
+        </div>
+        <div class="border border-line bg-card p-4">
+          ${q.status!=='APROBADA'?`
+            <p class="text-[12px] text-muted leading-relaxed mb-3">La aprobación queda registrada en la bitácora del expediente con usuario y fecha, y habilita la generación de la Orden de Trabajo sin recaptura de datos.</p>
+            <button class="btn btn-acc w-full" onclick="approveQuote('${o.id}')"><i data-lucide="check" class="w-3.5 h-3.5"></i>APROBAR COTIZACIÓN</button>`
+          :o.kind==='COT'?`
+            <p class="text-[12px] text-muted leading-relaxed mb-3">La solicitud y la cotización aprobada se transferirán íntegramente al nuevo expediente de producción.</p>
+            <button class="btn btn-acc w-full" onclick="genOT('${o.id}')"><i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>GENERAR ORDEN DE TRABAJO</button>`
+          :`<p class="text-[12px] text-muted leading-relaxed">Cotización aprobada — antecedente comercial de esta Orden de Trabajo.</p>`}
+        </div>
+      </div>
+    </div>
+    ${stageDocList(o,'cot')}`;
+
+  case 'ot':
+    if(o.kind==='COT'){return `
+      ${sHead('03','Orden de Trabajo','Etapa pendiente — requiere cotización aprobada')}
+      <div class="border-2 border-dashed border-line2 bg-card p-8 text-center">
+        <i data-lucide="lock" class="w-6 h-6 mx-auto text-muted"></i>
+        <p class="text-[13px] text-muted mt-3 max-w-[380px] mx-auto leading-relaxed">La Orden de Trabajo se genera automáticamente a partir de esta solicitud una vez aprobada la cotización, transfiriendo cliente, especificaciones técnicas y documentación.</p>
+        <button class="btn mt-4" onclick="setStage('cot')"><i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>IR A COTIZACIÓN</button>
+      </div>`}
+    return `
+    ${sHead('03','Orden de Trabajo',`Liberada ${o.production.started} · por ${esc(o.production.releasedBy)}`)}
+    <div class="grid lg:grid-cols-2 gap-5 items-start">
+      <div class="border-2 border-ink bg-card">
+        <div class="px-4 py-3 border-b border-line flex items-center justify-between">
+          <span class="kicker">INSTRUCCIONES DE PRODUCCIÓN</span>
+          <span class="tag" style="color:var(--${o.production.priority==='ALTA'?'danger':'muted'})">PRIORIDAD ${o.production.priority}</span></div>
+        <div class="p-4">
+          <div class="cellhead mb-1.5">EQUIPOS INTERVINIENTES</div>
+          <div class="mono text-[12px] mb-4">${esc(o.production.machine)}</div>
+          <div class="cellhead mb-2">NOTAS DE PROCESO</div>
+          <ul class="grid gap-2">${o.production.notes.map(n=>`<li class="flex gap-2.5 text-[12.5px] leading-snug"><span class="w-1.5 h-1.5 bg-accent mt-1.5 shrink-0"></span>${esc(n)}</li>`).join('')}</ul>
+        </div>
+      </div>
+      <div class="border-2 border-ink bg-card">
+        <div class="px-4 py-3 border-b border-line"><span class="kicker">MATERIA PRIMA ASIGNADA</span></div>
+        <div class="p-4">
+          <div class="mono text-[20px] font-bold">${esc(o.part.material)}</div>
+          <div class="grid grid-cols-2 gap-px bg-line border border-line mt-3">
+            <div class="bg-card p-3"><div class="cellhead">COLADA</div><div class="mono text-[13px] font-semibold mt-1">${o.part.heat||'—'}</div></div>
+            <div class="bg-card p-3"><div class="cellhead">CERTIFICACIÓN</div><div class="mono text-[13px] font-semibold mt-1">${esc(o.part.matStd)}</div></div>
+          </div>
+          <div class="grid gap-2 mt-4">
+            ${o.docs.filter(d=>d.type==='CERT'||d.type==='OC').map(d=>docRow(o,d)).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+    ${stageDocList(o,'ot')}`;
+
+  case 'ruta':{
+    if(o.kind==='COT'){return `
+      ${sHead('04','Hoja de Ruta','Etapa pendiente — se generará junto con la Orden de Trabajo')}
+      <div class="border-2 border-dashed border-line2 bg-card p-8 text-center">
+        <i data-lucide="lock" class="w-6 h-6 mx-auto text-muted"></i>
+        <p class="text-[13px] text-muted mt-3 max-w-[380px] mx-auto leading-relaxed">La secuencia de operaciones se planificará automáticamente según el tipo de pieza (${o.part.kind==='flange'?'pieza de revolución':o.part.kind==='shaft'?'eje / piñón':'pieza de chapa / soporte'}) al generar la OT.</p>
+      </div>`}
+    const done=o.routing.filter(x=>x.state==='DONE').length,tot=o.routing.length;
+    const std=o.routing.reduce((a,x)=>a+x.std,0),real=o.routing.reduce((a,x)=>a+(x.actual||0),0);
+    const run=o.routing.find(x=>x.state==='RUN');
+    const iRun=run?o.routing.indexOf(run):-1;
+    return `
+    ${sHead('04','Hoja de Ruta','Secuencia de operaciones autorizada para planta')}
+    <div class="border-2 border-ink bg-card p-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+      <div class="flex items-center gap-1">${o.routing.map(x=>`<span class="w-4 h-3 inline-block ${x.state==='DONE'?'bg-ink':x.state==='RUN'?'bg-accent node-live':'border border-line2'}"></span>`).join('')}</div>
+      <span class="mono text-[11.5px] font-semibold">${done}/${tot} OPERACIONES</span>
+      <span class="mono text-[10.5px] text-muted">T. EST. ${std} MIN · T. REAL ACUM. ${real} MIN</span>
+      ${run?`<span class="tag" style="color:var(--accent)">OP ${run.n} EN CURSO · ${Math.max(1,Math.round((Date.now()-run.startMs)/60000))} MIN</span>`:''}
+    </div>
+    <div class="border border-ink bg-card mt-4 overflow-x-auto">
+      <table class="w-full text-[13px]">
+        <thead><tr class="text-left"><th class="th">N°</th><th class="th">OPERACIÓN</th><th class="th">MÁQUINA</th><th class="th">OPERARIO</th>
+          <th class="th text-right">T. EST.</th><th class="th text-right">T. REAL</th><th class="th">ESTADO</th><th class="th text-right">ACCIÓN</th></tr></thead>
+        <tbody>${o.routing.map((op,i)=>{
+          const canStart=!run&&op.state==='PEND'&&(i===0||o.routing.slice(0,i).every(x=>x.state==='DONE'))&&o.status==='EN_PRODUCCION';
+          return `<tr class="border-b border-line/70 ${op.state==='RUN'?'bg-accent/5':''}">
+            <td class="td mono font-bold text-[12px]">${pad(op.n)}</td>
+            <td class="td font-semibold text-[12.5px]">${esc(op.op)}</td>
+            <td class="td mono text-[11px] text-muted">${esc(op.machine)}</td>
+            <td class="td text-[12px]">${esc(op.operator)}</td>
+            <td class="td mono text-right text-[12px]">${op.std}′</td>
+            <td class="td mono text-right text-[12px]">${op.actual!=null?op.actual+'′':'—'}</td>
+            <td class="td">${opTag(op.state)}</td>
+            <td class="td text-right">${op.state==='RUN'
+              ?`<button class="btn btn-sm" onclick="finishOp('${o.id}',${op.n})"><i data-lucide="square" class="w-3 h-3"></i>FINALIZAR</button>`
+              :canStart?`<button class="btn btn-sm btn-acc" onclick="startOp('${o.id}',${op.n})"><i data-lucide="play" class="w-3 h-3"></i>INICIAR</button>`
+              :`<span class="mono text-[11px] text-muted">—</span>`}</td></tr>`}).join('')}
+        </tbody>
+      </table>
+    </div>
+    ${done===tot?(o.status==='EN_PRODUCCION'
+      ?`<div class="border-2 border-ink bg-card p-4 mt-4 flex flex-wrap items-center gap-4">
+         <i data-lucide="flag" class="w-4.5 h-4.5 w-[18px] h-[18px] text-accent"></i>
+         <p class="text-[12.5px] flex-1 min-w-[220px]">Hoja de ruta completa. El lote está disponible para su envío a Control de Calidad.</p>
+         <button class="btn btn-acc" onclick="sendQuality('${o.id}')">ENVIAR A CONTROL DE CALIDAD<i data-lucide="arrow-right" class="w-3.5 h-3.5"></i></button></div>`
+      :`<p class="kicker mt-4">HOJA DE RUTA COMPLETA — LOTE EN CONTROL DE CALIDAD</p>`)
+     :`<p class="kicker mt-4">LAS OPERACIONES SE EJECUTAN EN SECUENCIA — CADA INICIO Y FIN QUEDA REGISTRADO EN LA BITÁCORA</p>`}
+    ${stageDocList(o,'ruta')}`}
+
+  case 'cal':{
+    if(o.kind==='COT'){return `
+      ${sHead('05','Control de Calidad','Etapa pendiente')}
+      <div class="border-2 border-dashed border-line2 bg-card p-8 text-center">
+        <i data-lucide="lock" class="w-6 h-6 mx-auto text-muted"></i>
+        <p class="text-[13px] text-muted mt-3 max-w-[380px] mx-auto">El plan de inspección se definirá al generar la Orden de Trabajo, según tipo de pieza y especificación del cliente.</p>
+      </div>`}
+    const canRelease=o.quality.plan.every(p=>o.quality.records.some(r=>r.code===p[0]&&r.result==='OK'))&&!o.quality.ncs.some(n=>n.state==='ABIERTA');
+    const lastRes=code=>{
+      const nc=o.quality.ncs.find(n=>n.code===code&&n.state==='ABIERTA');
+      if(nc)return `<span class="tag" style="color:var(--danger)">NC</span>`;
+      const r=[...o.quality.records].reverse().find(x=>x.code===code);
+      return r?`<span class="tag" style="color:var(--ok)">OK</span>`:`<span class="tag" style="color:var(--muted)">—</span>`};
+    return `
+    ${sHead('05','Control de Calidad',`${o.quality.records.length} registro(s) · ${o.quality.ncs.filter(n=>n.state==='ABIERTA').length} no conformidad(es) abierta(s)`)}
+    ${o.status==='NC'?`<div class="border-2 border-danger bg-danger/5 px-4 py-3 mb-4 flex flex-wrap items-center gap-3">
+        <i data-lucide="alert-triangle" class="w-4 h-4 text-danger"></i>
+        <span class="text-[12.5px] font-semibold">La OT pasó a estado NO CONFORMIDAD ABIERTA. Cierre las NC para poder liberar el lote.</span></div>`:''}
+    <div class="grid lg:grid-cols-2 gap-5 items-start">
+      <div class="border-2 border-ink bg-card overflow-x-auto">
+        <div class="px-4 py-3 border-b border-line"><span class="kicker">PLAN DE INSPECCIÓN</span></div>
+        <table class="w-full text-[13px]">
+          <thead><tr class="text-left"><th class="th">CÓD.</th><th class="th">CONTROL</th><th class="th">ESPECIFICACIÓN</th><th class="th">MÉTODO</th><th class="th">EST.</th></tr></thead>
+          <tbody>${o.quality.plan.map(p=>`<tr class="border-b border-line/70">
+            <td class="td mono font-bold text-[11px]">${p[0]}</td>
+            <td class="td font-semibold text-[12px]">${p[1]}</td>
+            <td class="td mono text-[11px] text-muted">${p[2]}</td>
+            <td class="td text-[11px] text-muted">${p[3]}</td>
+            <td class="td">${lastRes(p[0])}</td></tr>`).join('')}</tbody>
+        </table>
+      </div>
+      <div class="flex flex-col gap-4">
+        <div class="border-2 border-ink bg-card">
+          <div class="px-4 py-3 border-b border-line flex items-center justify-between">
+            <span class="kicker">REGISTROS DE INSPECCIÓN</span>
+            <button class="btn btn-sm btn-acc" onclick="openInspect()"><i data-lucide="plus" class="w-3 h-3"></i>REGISTRAR INSPECCIÓN</button></div>
+          <div class="p-4 grid gap-3 content-start max-h-[300px] overflow-auto scroll-slim">
+            ${o.quality.records.length?o.quality.records.slice().reverse().map(r=>`
+              <div class="border border-line bg-card px-3.5 py-2.5">
+                <div class="flex items-center gap-2.5 flex-wrap">
+                  <span class="mono text-[11px] font-bold">${r.code}</span>
+                  ${r.result==='OK'?`<span class="tag" style="color:var(--ok)">CONFORME</span>`:`<span class="tag" style="color:var(--danger)">NO CONFORME</span>`}
+                  <span class="mono text-[9.5px] text-muted ml-auto">${r.ts}</span></div>
+                <div class="text-[12px] mt-1 leading-snug">${esc(r.notes)}</div>
+                <div class="mono text-[9.5px] text-muted mt-1 uppercase">${esc(r.inspector)}</div></div>`).join('')
+             :`<p class="text-[12px] text-muted leading-relaxed">Sin registros aún. Registre inspecciones al completar las operaciones de la hoja de ruta.</p>`}
+          </div>
+        </div>
+        ${o.quality.ncs.length?o.quality.ncs.map((n,i)=>`
+          <div class="border-2 border-danger bg-card">
+            <div class="px-4 py-2.5 border-b border-danger/30 flex items-center justify-between">
+              <span class="mono text-[11px] font-bold text-danger">${n.id} · ${n.code}</span>
+              ${n.state==='ABIERTA'?`<span class="tag" style="color:var(--danger)">ABIERTA</span>`:`<span class="tag" style="color:var(--ok)">CERRADA</span>`}</div>
+            <div class="p-4">
+              <p class="text-[12.5px] leading-snug">${esc(n.desc)}</p>
+              <p class="mono text-[10.5px] text-muted mt-2">DISPOSICIÓN: ${esc(n.disp)} · ${n.ts}</p>
+              ${n.state==='ABIERTA'?`<button class="btn btn-sm mt-3" onclick="closeNC('${o.id}',${i})"><i data-lucide="check" class="w-3 h-3"></i>CERRAR NC — REPROCESO REALIZADO</button>`:''}
+            </div></div>`).join(''):''}
+        ${canRelease&&o.status==='EN_CALIDAD'?`
+          <div class="border-2 border-ok bg-card p-4 flex flex-wrap items-center gap-4">
+            <i data-lucide="shield-check" class="w-[18px] h-[18px] text-ok"></i>
+            <p class="text-[12.5px] flex-1 min-w-[200px]">Plan de inspección completo y conforme. El lote puede liberarse para entrega.</p>
+            <button class="btn btn-acc" onclick="releaseQC('${o.id}')">LIBERAR PARA ENTREGA</button></div>`:''}
+      </div>
+    </div>
+    ${stageDocList(o,'cal')}`}
+
+  case 'ent':{
+    if(o.status==='ENTREGADA'){return `
+      ${sHead('06','Entrega',`Expediente cerrado · ${fdate(o.delivery.date)}`)}
+      <div class="border-2 border-ink bg-card p-6 relative overflow-hidden">
+        <div class="absolute right-6 top-6 stamp rotate-3 opacity-90" style="color:var(--muted)">ENTREGADA</div>
+        <div class="cellhead">CONFORMIDAD DE ENTREGA</div>
+        <p class="text-[14px] mt-2 max-w-[520px] leading-relaxed">Lote de <b>${o.part.qty} piezas</b> de “${esc(o.part.name)}” entregado a <b>${esc(o.client.name)}</b>, recibido por <b>${esc(o.delivery.receivedBy)}</b> con remito <b class="mono">${o.delivery.remito}</b>.</p>
+        <div class="grid sm:grid-cols-3 gap-px bg-line border border-line mt-5 max-w-[640px]">
+          ${[['REMITO',o.delivery.remito],['FECHA',fdate(o.delivery.date)],['FACTURA',o.docs.find(d=>d.type==='FAC')?.title.split('Factura ')[1]||'—']].map(c=>`
+            <div class="bg-card p-3"><div class="cellhead">${c[0]}</div><div class="mono text-[13px] font-semibold mt-1">${esc(c[1])}</div></div>`).join('')}
+        </div>
+        <button class="btn mt-5" onclick="goTrace('${o.id}')"><i data-lucide="scan-search" class="w-3.5 h-3.5"></i>VER CADENA COMPLETA</button>
+      </div>
+      ${stageDocList(o,'ent')}`}
+    if(o.status==='LISTA'){return `
+      ${sHead('06','Entrega','Lote liberado por Calidad — pendiente de despacho')}
+      <div class="border-2 border-ink bg-card p-6">
+        <div class="flex items-center gap-3"><i data-lucide="package-check" class="w-5 h-5 text-ok"></i>
+          <p class="text-[14px] font-semibold">${o.part.qty} piezas liberadas — listas para entrega a ${esc(o.client.name)}.</p></div>
+        <p class="text-[12.5px] text-muted mt-2 max-w-[520px] leading-relaxed">Al registrar la entrega se generan y vinculan el remito y la factura, y el expediente se cierra con la cadena de trazabilidad completa.</p>
+        <button class="btn btn-acc mt-4" onclick="openDeliver()"><i data-lucide="package-check" class="w-3.5 h-3.5"></i>REGISTRAR ENTREGA</button>
+      </div>`}
+    return `
+    ${sHead('06','Entrega','Etapa pendiente')}
+    <div class="border-2 border-dashed border-line2 bg-card p-8 text-center">
+      <i data-lucide="lock" class="w-6 h-6 mx-auto text-muted"></i>
+      <p class="text-[13px] text-muted mt-3 max-w-[380px] mx-auto">La entrega se habilita cuando Control de Calidad libere el lote.</p>
+      ${o.kind==='OT'?`<button class="btn mt-4" onclick="setStage('cal')"><i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>IR A CONTROL DE CALIDAD</button>`:''}
+    </div>`}
+  }
+}
+
+function renderFile(){
+  const o=byId(state.current);if(!o){setView('board');return}
+  const cur=uiStage[o.id]||stageFromStatus(o);
+  if(o.status==='CONVERTIDA'){
+    $('#app').innerHTML=`<div class="border-2 border-ink bg-card shadow-hard p-6 max-w-[640px] mx-auto mt-10 text-center">
+      <span class="stamp" style="color:var(--muted)">CONVERTIDA A OT</span>
+      <p class="text-[14px] mt-4">Esta cotización fue convertida en la orden de trabajo <b class="mono">${o.convertedTo}</b>.</p>
+      <button class="btn btn-acc mt-4" onclick="openFile('${o.convertedTo}')">ABRIR ${o.convertedTo}<i data-lucide="arrow-right" class="w-3.5 h-3.5"></i></button>
+      <div class="mt-5 text-left">${o.log.slice().reverse().map(le=>`<div class="mono text-[10px] text-muted">${le.ts} — ${esc(le.actor)}</div><div class="text-[12px] mb-2">${esc(le.text)}</div>`).join('')}</div>
+    </div>`;lucide.createIcons();return;
+  }
+  $('#app').innerHTML=`
+  <div class="flex items-center gap-4 flex-wrap mb-5">
+    <button class="btn btn-sm" onclick="setView('board')"><i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>TRABAJOS</button>
+    <span class="kicker">EXPEDIENTE ÚNICO DE TRABAJO</span>
+  </div>
+  ${fileHeader(o)}
+  <div class="grid grid-cols-1 lg:grid-cols-[235px_minmax(0,1fr)_330px] gap-6 mt-6 items-start">
+    <div class="border-2 border-ink bg-card p-3.5 lg:sticky lg:top-[84px]">
+      <div class="kicker px-1.5 pb-2 pt-1">LÍNEA DE PROCESO</div>
+      ${fileTimeline(o,cur)}
+    </div>
+    <div class="min-w-0">${stageHTML(o,cur)}</div>
+    <aside class="flex flex-col gap-5 lg:sticky lg:top-[84px]">
+      <div class="border-2 border-ink bg-card">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-line">
+          <span class="kicker">EXPEDIENTE · DOCUMENTOS (${o.docs.length})</span>
+          <button class="btn btn-sm" onclick="openAttach()"><i data-lucide="plus" class="w-3 h-3"></i>ADJUNTAR</button></div>
+        <div class="max-h-[380px] overflow-auto scroll-slim p-2.5 grid gap-2 content-start">
+          ${o.docs.map(d=>docRow(o,d)).join('')}
+        </div>
+      </div>
+      <div class="border-2 border-ink bg-card">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-line">
+          <span class="kicker">BITÁCORA DEL EXPEDIENTE</span><i data-lucide="history" class="w-3.5 h-3.5 text-muted"></i></div>
+        <div class="max-h-[430px] overflow-auto scroll-slim p-4 grid gap-3.5 content-start">
+          ${o.log.slice().reverse().map(le=>`
+            <div class="relative pl-4 ${le.fresh?'before:absolute before:left-0 before:top-1 before:bottom-1 before:w-[3px] before:bg-accent':''}">
+              <div class="mono text-[10px] text-muted tracking-wide">${le.ts}</div>
+              <div class="text-[12px] leading-snug mt-0.5">${esc(le.text)}</div>
+              <div class="mono text-[9.5px] text-muted mt-0.5 uppercase tracking-wider">${esc(le.actor)}</div></div>`).join('')}
+        </div>
+      </div>
+    </aside>
+  </div>`;
+  lucide.createIcons();
+}
+
+/* ================= ACCIONES DEL EXPEDIENTE ================= */
+function approveQuote(id){
+  const o=byId(id);
+  o.status='COT_APR';o.quote.status='APROBADA';
+  o.quote.approvedBy=USER+' (registro en representación del cliente)';o.quote.approvedTs=ts();
+  o.docs.push(mkDoc('INF','Conformidad de cliente — '+o.quote.number,'cot','note',{ts:ts(),stamp:'APROBADO',signedBy:'Área Comercial',
+    body:['El cliente aprueba la cotización '+o.quote.number+' por la suma de '+fmoney(o.quote.total)+'.','La aprobación quedó registrada con usuario y fecha, y habilita la generación de la Orden de Trabajo.']}));
+  logEv(o,'Cotización '+o.quote.number+' aprobada. Se habilita la generación de la Orden de Trabajo.');
+  toast('ok','Cotización aprobada','El registro quedó asentado en la bitácora del expediente.');render();
+}
+
+function genOT(id){
+  const o=byId(id);
+  const num='OT-2025-0'+(seqOT++);
+  const n={id:num,kind:'OT',status:'EN_PRODUCCION',
+    client:{...o.client},part:{...o.part},request:{...o.request},quote:{...o.quote},
+    production:{started:ts(),releasedBy:USER,priority:o.request.text.includes('rgente')?'ALTA':'NORMAL',machine:'Según hoja de ruta',
+      notes:['Verificar plano y revisión vigente antes de iniciar.','Conservar identificación de material y colada en todo el proceso.','Registrar tiempos reales por operación.']},
+    routing:mkRouting(o.part.kind),
+    quality:{plan:mkQPlan(o.part.kind),records:[],ncs:[]},
+    docs:[
+      {...o.docs.find(d=>d.type==='SOL'),id:'D'+(dseq++),ts:ts()},
+      {...o.docs.find(d=>d.type==='PLANO'),id:'D'+(dseq++),ts:ts()},
+      mkDoc('COTD','Cotización '+o.quote.number+' (aprobada)','cot','comercial',{subtype:'COT',num:o.quote.number,ts:ts()}),
+      mkDoc('INF','Conformidad de cliente — '+o.quote.number,'cot','note',{ts:ts(),stamp:'APROBADO',signedBy:'Área Comercial',
+        body:['Aprobación registrada del cliente para la cotización '+o.quote.number+' por '+fmoney(o.quote.total)+'.']})
+    ],
+    log:[
+      {ts:ts(),actor:'sistema',text:'Expediente generado automáticamente a partir de la solicitud '+o.request.ref+' y la cotización aprobada '+o.quote.number+'.'},
+      {ts:ts(),actor:USER,text:'Orden de Trabajo '+num+' generada y puesta en cola de producción.'}
+    ]};
+  o.status='CONVERTIDA';o.convertedTo=num;
+  OTS.unshift(n);uiStage[num]=stageFromStatus(n);
+  toast('ok','Orden de Trabajo generada',num+' creada a partir de '+o.quote.number+' — toda la documentación fue transferida.');
+  openFile(num);
+}
+
+function startOp(id,n){
+  const o=byId(id);const i=o.routing.findIndex(x=>x.n===n);const op=o.routing[i];
+  if(o.routing.some(x=>x.state==='RUN'))return toast('err','Operación en curso','Finalice la operación actual antes de iniciar otra.');
+  if(i>0&&o.routing.slice(0,i).some(x=>x.state!=='DONE'))return toast('err','Secuencia de proceso','Las operaciones anteriores deben estar completadas.');
+  op.state='RUN';op.startMs=Date.now();
+  logEv(o,'Operación '+op.n+' iniciada ('+op.op+') en '+op.machine+' — operario: '+op.operator+'.');
+  toast('info','Operación iniciada','OP '+op.n+' — '+op.op+' · '+op.operator);render();
+}
+function finishOp(id,n){
+  const o=byId(id);const op=o.routing.find(x=>x.n===n);
+  const mins=Math.max(1,Math.round((Date.now()-(op.startMs||Date.now()))/60000));
+  const actual=Math.max(mins,Math.round(op.std*(0.82+Math.random()*0.4)));
+  op.state='DONE';op.actual=actual;op.startMs=null;
+  logEv(o,'Operación '+op.n+' completada ('+op.op+') — '+actual+' min / '+op.std+' std. Operario: '+op.operator+'.');
+  if(o.routing.every(x=>x.state==='DONE'))toast('ok','Hoja de ruta completa','Disponible para envío a Control de Calidad.');
+  else toast('ok','Operación completada','OP '+op.n+' — '+actual+' min registrados.');render();
+}
+function sendQuality(id){
+  const o=byId(id);o.status='EN_CALIDAD';uiStage[id]='cal';
+  logEv(o,'Hoja de ruta finalizada. Lote de '+o.part.qty+' piezas enviado a Control de Calidad.');
+  toast('info','Enviado a calidad','El lote quedó en espera de inspección según plan.');render();
+}
+function closeNC(id,i){
+  const o=byId(id);const n=o.quality.ncs[i];n.state='CERRADA';
+  if(o.status==='NC')o.status='EN_CALIDAD';
+  logEv(o,'No conformidad '+n.id+' cerrada tras reproceso ('+n.disp+'). Lotificación lista para re-inspección.');
+  toast('ok','NC cerrada',n.id+' — se habilita la re-inspección del lote.');render();
+}
+function releaseQC(id){
+  const o=byId(id);const num='CI-0'+(seqCI++);
+  o.docs.push(mkDoc('QC','Certificado interno de conformidad '+num,'cal','qcert',{num,ts:ts()}));
+  o.status='LISTA';uiStage[id]='ent';
+  logEv(o,'Plan de inspección completo y conforme. Lote de '+o.part.qty+' piezas liberado para entrega ('+num+').','Calidad — A. Ríos');
+  toast('ok','Lote liberado','Certificado interno '+num+' emitido y vinculado al expediente.');render();
+}
+
+/* --- modales de inspección / entrega / adjuntar --- */
+let inspResult='OK';
+function pickRes(r){inspResult=r;
+  $('#resOK').className='btn flex-1 '+(r==='OK'?'!bg-ok !border-ok !text-white':'btn-ghost');
+  $('#resNC').className='btn flex-1 '+(r==='NC'?'!bg-danger !border-danger !text-white':'btn-ghost');
+  $('#resOK').style.borderColor=r==='OK'?'var(--ok)':'';$('#resNC').style.borderColor=r==='NC'?'var(--danger)':'';}
+
+function openInspect(){
+  const o=byId(state.current);inspResult='OK';
+  openModal('REGISTRAR INSPECCIÓN · '+o.id,`
+    <div class="grid gap-4">
+      <label class="block"><span class="cellhead">PUNTO DEL PLAN DE INSPECCIÓN</span>
+        <select id="inspOp" class="fld mt-1.5 mono text-[12px]">${o.quality.plan.map(p=>`<option value="${p[0]}">${p[0]} — ${p[1]}</option>`).join('')}</select></label>
+      <div><span class="cellhead">RESULTADO</span>
+        <div class="flex gap-2.5 mt-1.5">
+          <button id="resOK" onclick="pickRes('OK')" class="btn flex-1 !bg-ok !border-ok !text-white">CONFORME</button>
+          <button id="resNC" onclick="pickRes('NC')" class="btn flex-1 btn-ghost" style="border-color:var(--line2)">NO CONFORME</button>
+        </div></div>
+      <label class="block"><span class="cellhead">OBSERVACIONES</span>
+        <textarea id="inspNotes" rows="3" class="fld mt-1.5" placeholder="Detalle de medición, piezas evaluadas, desvíos…"></textarea></label>
+      <p class="text-[11.5px] text-muted leading-relaxed">El registro se asienta en la bitácora con usuario, fecha y hora. Una no conformidad reabre la OT para reproceso.</p>
+      <button class="btn btn-acc" onclick="saveInspect()"><i data-lucide="check" class="w-3.5 h-3.5"></i>GUARDAR REGISTRO</button>
+    </div>`);
+}
+function saveInspect(){
+  const o=byId(state.current);const code=$('#inspOp').value;const notes=$('#inspNotes').value.trim();
+  if(inspResult==='NC'){
+    const nid='NC-2025-0'+(seqNC++);
+    o.quality.ncs.push({id:nid,code,desc:notes||'No conformidad detectada en inspección.',disp:'Reproceso en planta',state:'ABIERTA',ts:ts()});
+    o.status='NC';
+    logEv(o,'NO CONFORMIDAD '+nid+' registrada en '+code+(notes?' — '+notes:'')+'. Disposición: reproceso en planta.','Calidad — A. Ríos');
+    toast('err','No conformidad registrada',nid+' — la OT pasa a estado NC para reproceso.');
+  }else{
+    o.quality.records.push({code,result:'OK',inspector:'A. Ríos',notes:notes||'Conforme.',ts:ts()});
+    logEv(o,'Inspección registrada: '+code+' — CONFORME.'+(notes?' '+notes:''),'Calidad — A. Ríos');
+    toast('ok','Inspección registrada',code+' — resultado CONFORME.');
+  }
+  closeModal();render();
+}
+
+function openDeliver(){
+  const o=byId(state.current);
+  openModal('REGISTRAR ENTREGA · '+o.id,`
+    <div class="grid gap-4">
+      <p class="text-[12.5px] leading-relaxed">Se entregará el lote de <b>${o.part.qty} piezas</b> de “${esc(o.part.name)}” a <b>${esc(o.client.name)}</b>. Se generarán y vincularán remito y factura al expediente.</p>
+      <label class="block"><span class="cellhead">RECIBIDO POR (CLIENTE)</span>
+        <input id="dlvBy" class="fld mt-1.5" value="Almacén — ${esc(o.client.name)}"></label>
+      <button class="btn btn-acc" onclick="confirmDeliver()"><i data-lucide="package-check" class="w-3.5 h-3.5"></i>CONFIRMAR ENTREGA Y CERRAR EXPEDIENTE</button>
+    </div>`);
+}
+function confirmDeliver(){
+  const o=byId(state.current);const by=$('#dlvBy').value.trim()||'Almacén cliente';
+  const rem='REM-2025-0'+(seqREM++);const fac='A 0021-00'+(seqFAC++);
+  o.delivery={remito:rem,date:ts().slice(0,10),receivedBy:by};
+  o.docs.push(mkDoc('REM','Remito '+rem,'ent','comercial',{subtype:'REM',num:rem,receivedBy:by,ts:ts()}));
+  o.docs.push(mkDoc('FAC','Factura '+fac,'ent','comercial',{subtype:'FAC',num:fac,ts:ts()}));
+  o.status='ENTREGADA';
+  logEv(o,'Entrega registrada. Remito '+rem+' firmado por '+by+'.',USER);
+  logEv(o,'Factura '+fac+' emitida y vinculada al expediente. Expediente cerrado.','Administración');
+  closeModal();toast('ok','Entrega registrada','Expediente cerrado con cadena de trazabilidad completa.');render();
+}
+
+function openAttach(){
+  const o=byId(state.current);
+  openModal('ADJUNTAR DOCUMENTO AL EXPEDIENTE',`
+    <div class="grid gap-4">
+      <label class="block"><span class="cellhead">TIPO DE DOCUMENTO</span>
+        <select id="attType" class="fld mt-1.5 text-[12.5px]">
+          <option>Informe de producción</option><option>Registro fotográfico</option>
+          <option>Documento del cliente</option><option>Revisión de plano</option><option>Otro antecedente</option>
+        </select></label>
+      <div><span class="cellhead">ARCHIVO</span>
+        <div class="flex gap-2 mt-1.5">
+          <input type="file" id="attFile" class="hidden" onchange="if(this.files[0])$('#attName').value=this.files[0].name">
+          <button class="btn btn-sm" onclick="$('#attFile').click()"><i data-lucide="paperclip" class="w-3 h-3"></i>SELECCIONAR</button>
+          <input id="attName" class="fld flex-1" placeholder="o escriba una denominación…"></div></div>
+      <label class="block"><span class="cellhead">VINCULAR A ETAPA</span>
+        <select id="attStage" class="fld mt-1.5 text-[12.5px]">${STAGES.map(s=>`<option value="${s[0]}">${s[2]}</option>`).join('')}</select></label>
+      <p class="text-[11.5px] text-muted leading-relaxed">El documento queda registrado como evidencia con sello de recepción, hash de integridad y asiento en la bitácora.</p>
+      <button class="btn btn-acc" onclick="confirmAttach()"><i data-lucide="link-2" class="w-3.5 h-3.5"></i>ADJUNTAR AL EXPEDIENTE</button>
+    </div>`);
+}
+function confirmAttach(){
+  const o=byId(state.current);const name=$('#attName').value.trim();
+  if(!name)return toast('err','Falta denominación','Indique el archivo o una denominación para el documento.');
+  const type=$('#attType').value;const stage=$('#attStage').value;
+  o.docs.push(mkDoc('ADJ',name,stage,'note',{ts:ts(),stamp:'RECIBIDO',signedBy:USER,
+    body:['Documento adjuntado al expediente desde el puesto de trabajo.','Tipo: '+type+'.','Registrado como evidencia del proceso con hash de integridad: '+hash(name)+'.']}));
+  logEv(o,'Documento adjuntado al expediente: “'+name+'” ('+type+') — vinculado a etapa '+STAGE_L[stage]+'. Hash '+hash(name)+'.');
+  closeModal();toast('ok','Documento adjuntado','“'+name+'” quedó vinculado a la etapa '+STAGE_L[stage]+'.');render();
+}
+
+/* ================= VISTA: TRAZABILIDAD ================= */
+function chainLinks(o){
+  const L=[];
+  L.push({t:'CLIENTE Y SOLICITUD',ok:2,
+    rows:[['CLIENTE',o.client.name],['REFERENCIA',o.request.ref],['RECIBIDA',fdate(o.request.received)+' · '+o.request.channel]],
+    docs:o.docs.filter(d=>d.stage==='sol')});
+  L.push({t:'COTIZACIÓN',ok:o.quote.status==='APROBADA'?2:1,
+    rows:[['N°',o.quote.number],['MONTO',fmoney(o.quote.total)],['ESTADO',o.quote.status==='APROBADA'?'Aprobada — '+o.quote.approvedTs:'Pendiente de aprobación']],
+    docs:o.docs.filter(d=>d.stage==='cot')});
+  if(o.kind==='OT'){
+    L.push({t:'ORDEN DE TRABAJO',ok:2,
+      rows:[['OT',o.id],['LIBERADA',o.production.started+' · '+o.production.releasedBy],['PRIORIDAD',o.production.priority]],
+      docs:o.docs.filter(d=>d.stage==='ot')});
+    L.push({t:'MATERIA PRIMA',ok:2,
+      rows:[['MATERIAL',o.part.material],['COLADA',o.part.heat||'—'],['CERTIFICACIÓN',o.part.matStd]],
+      docs:o.docs.filter(d=>d.type==='CERT')});
+    const dn=o.routing.filter(x=>x.state==='DONE').length,tn=o.routing.length;
+    const ops=[...new Set(o.routing.filter(x=>x.state==='DONE').map(x=>x.operator))];
+    L.push({t:'HOJA DE RUTA',ok:dn===tn?2:1,
+      rows:[['OPERACIONES',dn+' / '+tn+' completadas'],['OPERARIOS',ops.length?ops.join(' · '):'—'],['MÁQUINAS',o.production.machine]],
+      docs:o.docs.filter(d=>d.stage==='ruta')});
+    const pok=o.quality.plan.filter(p=>o.quality.records.some(r=>r.code===p[0]&&r.result==='OK')).length;
+    const ncA=o.quality.ncs.filter(n=>n.state==='ABIERTA').length;
+    L.push({t:'CONTROL DE CALIDAD',ok:(o.quality.records.length&&!ncA)?2:(ncA?1:0),
+      rows:[['INSPECCIONES',pok+' / '+o.quality.plan.length+' conformes'],['NO CONFORMIDADES',ncA?ncA+' abierta(s)':'—'],['INSP. REGISTROS',String(o.quality.records.length)]],
+      docs:o.docs.filter(d=>d.type==='QC'||d.stage==='cal')});
+    L.push({t:'ENTREGA',ok:o.status==='ENTREGADA'?2:0,
+      rows:o.status==='ENTREGADA'
+        ?[['REMITO',o.delivery.remito],['FECHA',fdate(o.delivery.date)],['RECIBIDO POR',o.delivery.receivedBy]]
+        :[['ESTADO','Pendiente — disponible tras liberación de calidad']],
+      docs:o.docs.filter(d=>d.stage==='ent')});
+  }else{
+    L.push({t:'ORDEN DE TRABAJO',ok:0,rows:[['ESTADO','Se generará al aprobar la cotización']],docs:[]});
+    L.push({t:'PRODUCCIÓN · CALIDAD · ENTREGA',ok:0,rows:[['ESTADO','Eslabones pendientes del ciclo productivo']],docs:[]});
+  }
+  return L;
+}
+
+function traceSearch(v){
+  const dp=$('#traceDrop');const q=v.trim().toLowerCase();
+  if(!q){dp.classList.add('hidden');return}
+  const res=OTS.filter(o=>matchQuery(o,q)).slice(0,6);
+  dp.innerHTML=res.length?res.map(o=>`<button onclick="setTrace('${o.id}')" class="w-full text-left px-4 py-3 border-b border-line hover:bg-paper flex items-center gap-3">
+      <span class="tag" style="color:var(--${ST[o.status].c})">${ST[o.status].l}</span>
+      <span class="min-w-0"><span class="block text-[12.5px] font-bold truncate">${o.id} — ${esc(o.part.name)}</span>
+      <span class="block mono text-[10.5px] text-muted truncate">${esc(o.client.name)} · ${esc(o.part.material)}</span></span></button>`).join('')
+    :`<div class="px-4 py-4 text-[12px] text-muted">Sin resultados para “${esc(q)}”.</div>`;
+  dp.classList.remove('hidden');
+}
+function setTrace(id){state.traceSel=id;$('#traceDrop').classList.add('hidden');$('#traceQ').value='';renderTrace()}
+
+function renderTrace(){
+  const o=byId(state.traceSel||'OT-2025-0101');
+  const links=chainLinks(o);
+  const doneN=links.filter(l=>l.ok===2).length;
+  $('#app').innerHTML=`
+  <div class="max-w-[900px] mx-auto">
+    <div class="flex items-center gap-4 flex-wrap mb-4">
+      <button class="btn btn-sm" onclick="setView('board')"><i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>TRABAJOS</button>
+      <span class="kicker">CONSULTA DE TRAZABILIDAD</span>
+    </div>
+    <div class="border-l-[3px] border-accent pl-5 py-1 my-5">
+      <p class="text-[19px] lg:text-[23px] font-bold xdisp leading-snug">“¿Qué trabajo se realizó, para qué cliente, bajo qué especificaciones, con qué material, qué operaciones se realizaron, quién intervino, qué controles se efectuaron y qué documentación respalda el proceso?”</p>
+    </div>
+    <div class="relative mt-6">
+      <i data-lucide="scan-search" class="w-4.5 h-4.5 w-[18px] h-[18px] absolute left-3.5 top-1/2 -translate-y-1/2 text-muted"></i>
+      <input id="traceQ" oninput="traceSearch(this.value)" autocomplete="off" placeholder="Buscar por OT, pieza, cliente, colada o referencia…"
+        class="w-full bg-card border-2 border-ink outline-none pl-11 pr-4 py-3.5 text-[14px] placeholder:text-muted/70 shadow-hard">
+      <div id="traceDrop" class="absolute z-20 left-0 right-0 top-[calc(100%+6px)] border-2 border-ink bg-card shadow-hard overflow-hidden hidden max-h-[300px] overflow-y-auto scroll-slim"></div>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-4 mt-8 mb-5">
+      <div>
+        <div class="kicker mb-1">CADENA DE CUSTODIA</div>
+        <h2 class="text-[24px] font-extrabold xdisp leading-none">${o.id} <span class="text-muted font-semibold">·</span> ${esc(o.part.name)}</h2>
+        <div class="mono text-[11px] text-muted mt-1.5">${esc(o.client.name)} · ${esc(o.part.material)} · COLADA ${o.part.heat||'—'}</div>
+      </div>
+      <div class="text-right">
+        <div class="mono text-[13px] font-bold">${doneN}/${links.length} ESLABONES CONFIRMADOS</div>
+        ${doneN===links.length?`<span class="stamp -rotate-2 mt-2" style="color:var(--ok)">CADENA COMPLETA · VERIFICADA</span>`
+          :`<div class="flex h-2 w-[180px] gap-px mt-2 ml-auto">${links.map(l=>`<div class="flex-1" style="background:${l.ok===2?'var(--ink)':l.ok===1?'var(--accent)':'var(--line2)'}"></div>`).join('')}</div>`}
+      </div>
+    </div>
+
+    <div>${links.map((l,i)=>`
+      <div class="relative pl-8 pb-5">
+        <span class="absolute left-0 top-0.5 w-[13px] h-[13px] ${l.ok===2?'bg-ink':l.ok===1?'bg-accent node-live':'bg-paper border-[1.5px] border-line2'}"></span>
+        ${i<links.length-1?`<span class="absolute left-[6px] top-5 bottom-0 w-px ${l.ok===2?'bg-ink/50':'border-l border-dashed border-line2'}"></span>`:''}
+        <div class="border ${l.ok===0?'border-dashed border-line2 opacity-75':'border-ink'} bg-card p-4">
+          <div class="flex items-center justify-between gap-3 flex-wrap">
+            <div class="flex items-center gap-3">
+              <span class="mono text-[9px] text-muted tracking-[.2em]">ESLABÓN ${pad(i+1)}</span>
+              <span class="text-[13.5px] font-bold">${l.t}</span></div>
+            ${l.ok===2?`<span class="tag" style="color:var(--ok)">CONFIRMADO</span>`
+              :l.ok===1?`<span class="tag" style="color:var(--accent)">EN PROCESO</span>`
+              :`<span class="tag" style="color:var(--muted)">PENDIENTE</span>`}</div>
+          <div class="grid sm:grid-cols-3 gap-px bg-line border border-line mt-3">
+            ${l.rows.map(r=>`<div class="bg-card p-2.5"><div class="cellhead">${r[0]}</div><div class="text-[12px] font-semibold mt-0.5 break-words">${esc(r[1])}</div></div>`).join('')}
+          </div>
+          ${l.docs.length?`<div class="flex flex-wrap gap-2 mt-3">
+            ${l.docs.map(d=>`<button onclick="viewDoc('${o.id}','${d.id}')" class="flex items-center gap-2 border border-line2 hover:border-ink px-2.5 py-1.5 text-left transition-colors">
+              <span class="mono text-[8.5px] font-bold">${DT[d.type].a}</span>
+              <span class="text-[11px] font-semibold max-w-[240px] truncate">${esc(d.title)}</span>
+              <i data-lucide="eye" class="w-3 h-3 text-muted"></i></button>`).join('')}
+          </div>`:''}
+        </div>
+      </div>`).join('')}
+    </div>
+    ${doneN===links.length?`<div class="border-2 border-ink bg-card shadow-hard p-5 mt-2 flex flex-wrap items-center gap-4">
+      <i data-lucide="shield-check" class="w-6 h-6 text-ok"></i>
+      <p class="text-[13px] flex-1 min-w-[240px] leading-relaxed"><b>Cadena completa.</b> El historial del trabajo puede reconstruirse de extremo a extremo con evidencia documental en cada eslabón — sin buscar en planillas ni carpetas.</p>
+      <button class="btn" onclick="openFile('${o.id}')">ABRIR EXPEDIENTE<i data-lucide="arrow-right" class="w-3.5 h-3.5"></i></button>
+    </div>`:''}
+  </div>`;
+  lucide.createIcons();
+}
+
+/* ================= VISTA: NUEVA SOLICITUD ================= */
+const CLIENTES=['Metalúrgica Delta S.A.','AgroParts Ltd.','HidroSur S.R.L.','TecnoFer S.A.'];
+function renderNew(){
+  $('#app').innerHTML=`
+  <div class="max-w-[900px] mx-auto">
+    <div class="flex items-center gap-4 mb-6">
+      <button class="btn btn-sm" onclick="setView('board')"><i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>TRABAJOS</button>
+      <span class="kicker">CICLO: SOLICITUD → COTIZACIÓN → OT → PRODUCCIÓN → CALIDAD → ENTREGA</span>
+    </div>
+    <div class="kicker mb-1.5">REGISTRO INICIAL DEL EXPEDIENTE</div>
+    <h1 class="text-[28px] font-extrabold xdisp leading-none mb-6">Nueva solicitud de cliente</h1>
+    <form onsubmit="saveNew(event)" class="border-2 border-ink bg-card shadow-hard p-6 grid md:grid-cols-2 gap-5">
+      <label class="block"><span class="cellhead">CLIENTE</span>
+        <select id="nCli" class="fld mt-1.5 text-[12.5px]">${CLIENTES.map(c=>`<option>${c}</option>`).join('')}</select></label>
+      <label class="block"><span class="cellhead">CONTACTO</span>
+        <input id="nContact" class="fld mt-1.5" placeholder="Nombre y área del contacto"></label>
+      <label class="block"><span class="cellhead">DENOMINACIÓN DE LA PIEZA *</span>
+        <input id="nPart" class="fld mt-1.5" placeholder="Ej.: Flanza de acople Ø150"></label>
+      <label class="block"><span class="cellhead">TIPO DE PIEZA (DEFINE HOJA DE RUTA Y PLANO)</span>
+        <select id="nKind" class="fld mt-1.5 text-[12.5px]">
+          <option value="flange">Pieza de revolución — flanza / cubo</option>
+          <option value="shaft">Eje / piñón</option>
+          <option value="plate">Soporte / pieza de chapa</option></select></label>
+      <div class="grid grid-cols-2 gap-4">
+        <label class="block"><span class="cellhead">N° PLANO</span><input id="nDwg" class="fld mt-1.5 mono text-[12.5px]" placeholder="FL-1240"></label>
+        <label class="block"><span class="cellhead">REVISIÓN</span><input id="nRev" class="fld mt-1.5 mono text-[12.5px]" value="A"></label>
+      </div>
+      <label class="block"><span class="cellhead">MATERIAL</span>
+        <select id="nMat" class="fld mt-1.5 mono text-[12.5px]">
+          ${['AISI 4140','42CrMo4','AISI 316L','C45','20MnCr5','GGG50','7075-T6'].map(m=>`<option>${m}</option>`).join('')}</select></label>
+      <div class="grid grid-cols-3 gap-4">
+        <label class="block"><span class="cellhead">CANTIDAD *</span><input id="nQty" type="number" min="1" class="fld mt-1.5 mono text-[12.5px]" value="10"></label>
+        <label class="block"><span class="cellhead">ENTREGA *</span><input id="nDue" type="date" class="fld mt-1.5 mono text-[12.5px]"></label>
+        <label class="block"><span class="cellhead">P. UNIT. $</span><input id="nPrice" type="number" min="0" class="fld mt-1.5 mono text-[12.5px]" value="120000"></label>
+      </div>
+      <label class="block md:col-span-2"><span class="cellhead">REQUERIMIENTO DEL CLIENTE *</span>
+        <textarea id="nText" rows="3" class="fld mt-1.5" placeholder="Descripción del trabajo, especificaciones, requisitos de certificación…"></textarea></label>
+      <div class="md:col-span-2 flex flex-wrap items-center gap-4 border-t border-line pt-5">
+        <p class="text-[11.5px] text-muted flex-1 min-w-[240px] leading-relaxed">Se crea el expediente con la solicitud y su cotización en estado <b>pendiente</b>. Al aprobarse, se generará la Orden de Trabajo transferiendo todos los datos.</p>
+        <button type="submit" class="btn btn-acc"><i data-lucide="plus" class="w-3.5 h-3.5"></i>REGISTRAR SOLICITUD Y COTIZACIÓN</button>
+      </div>
+    </form>
+  </div>`;
+  const d=new Date();d.setDate(d.getDate()+21);
+  $('#nDue').value=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  lucide.createIcons();
+}
+function saveNew(e){
+  e.preventDefault();
+  const part=$('#nPart').value.trim(),qty=parseInt($('#nQty').value)||0,text=$('#nText').value.trim();
+  if(!part)return toast('err','Falta la pieza','Indique la denominación de la pieza a mecanizar.');
+  if(!qty||qty<1)return toast('err','Cantidad inválida','La cantidad debe ser mayor a cero.');
+  if(!text)return toast('err','Falta el requerimiento','Describa el trabajo solicitado por el cliente.');
+  const id='COT-2025-00'+(seqCOT++);
+  const kind=$('#nKind').value,price=parseInt($('#nPrice').value)||0;
+  const n={id,kind:'COT',status:'COT_PEND',
+    client:{name:$('#nCli').value,code:'CLI-'+pad(10+OTS.length%40),contact:$('#nContact').value.trim()||'—',email:'—'},
+    part:{name:part,kind,dwg:($('#nDwg').value.trim()||'SIN-COD').toUpperCase(),rev:($('#nRev').value.trim()||'A').toUpperCase(),
+      material:$('#nMat').value,matStd:'A determinar',heat:'—',qty,due:$('#nDue').value},
+    request:{ref:'RFQ-'+(seqRFQ++),received:ts().slice(0,10),by:'Área Comercial',channel:'Registro manual',text},
+    quote:{number:'COT-2025-03'+(20+seqCOT%80),date:ts().slice(0,10),valid:'15 días',status:'PENDIENTE',
+      items:[{d:part+' — '+$('#nMat').value+', según plano '+($('#nDwg').value.trim()||'s/código')+' rev.'+($('#nRev').value.trim()||'A'),q:qty,u:price}],total:qty*price},
+    docs:[
+      mkDoc('SOL','Solicitud de cliente RFQ-'+(seqRFQ-1),'sol','note',{ts:ts(),stamp:'RECIBIDO',signedBy:'Área Comercial',body:[text]}),
+      mkDoc('PLANO','Plano '+($('#nDwg').value.trim()||'SIN-COD')+' rev.'+($('#nRev').value.trim()||'A')+' — '+part,'sol',kind,{rev:($('#nRev').value.trim()||'A'),ts:ts()}),
+      mkDoc('COTD','Cotización COT-2025-03'+(20+seqCOT%80),'cot','comercial',{subtype:'COT',num:'COT-2025-03'+(20+seqCOT%80),ts:ts()})
+    ],
+    log:[
+      {ts:ts(),actor:USER,text:'Solicitud de cliente registrada (RFQ-'+(seqRFQ-1)+'). Expediente iniciado.'},
+      {ts:ts(),actor:USER,text:'Cotización emitida y vinculada. Pendiente de aprobación del cliente.'}
+    ]};
+  OTS.unshift(n);
+  toast('ok','Expediente creado',id+' — la cotización espera aprobación para generar la OT.');
+  openFile(id);
+}
+
+/* ================= VISOR DE DOCUMENTOS ================= */
+let z={s:1,x:0,y:0};
+function zApply(){const w=$('#svgWrap');if(!w)return;w.style.transform=`translate(${z.x}px,${z.y}px) scale(${z.s})`;w.style.transformOrigin='center center'}
+function zStep(f){z.s=Math.min(6,Math.max(.5,z.s*f));zApply()}
+function zReset(){z={s:1,x:0,y:0};zApply()}
+function wireZoom(){
+  const b=$('#docBody');z={s:1,x:0,y:0};
+  b.addEventListener('wheel',e=>{e.preventDefault();z.s=Math.min(6,Math.max(.5,z.s*(e.deltaY<0?1.15:.87)));zApply()},{passive:false});
+  const w=$('#svgWrap');let drag=null;
+  w.addEventListener('pointerdown',e=>{drag={x:e.clientX-z.x,y:e.clientY-z.y};w.setPointerCapture(e.pointerId);w.style.cursor='grabbing'});
+  w.addEventListener('pointermove',e=>{if(drag){z.x=e.clientX-drag.x;z.y=e.clientY-drag.y;zApply()}});
+  ['pointerup','pointercancel'].forEach(ev=>w.addEventListener(ev,()=>{drag=null;w.style.cursor='grab'}));
+}
+function closeDoc(){const o=$('#docOverlay');o.className='fixed inset-0 z-50 hidden';o.innerHTML=''}
+
+function viewDoc(otId,docId){
+  const o=byId(otId),d=o.docs.find(x=>x.id===docId);if(!d)return;
+  const isSvg=['flange','shaft','plate'].includes(d.viewer);
+  $('#docOverlay').className='fixed inset-0 z-50 flex items-center justify-center p-3 lg:p-8 bg-ink/60 backdrop-blur-[2px]';
+  $('#docOverlay').innerHTML=`
+  <div class="w-full max-w-[980px] max-h-full flex flex-col">
+    <div class="flex items-center gap-3 bg-ink text-paper px-4 py-2.5 shrink-0">
+      <span class="mono text-[9px] font-bold border border-paper/40 px-2 py-1">${DT[d.type].a}</span>
+      <div class="min-w-0 flex-1">
+        <div class="text-[13px] font-bold truncate">${esc(d.title)}</div>
+        <div class="mono text-[9.5px] text-paper/55 tracking-wider truncate">EXPEDIENTE ${o.id} · EMISIÓN ${d.ts} · REV ${d.rev} · SHA ${hash(d.id+d.title)}</div>
+      </div>
+      ${isSvg?`<button onclick="zStep(1.25)" class="text-paper/70 hover:text-paper p-1.5" title="Acercar"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
+        <button onclick="zStep(.8)" class="text-paper/70 hover:text-paper p-1.5" title="Alejar"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
+        <button onclick="zReset()" class="text-paper/70 hover:text-paper p-1.5" title="Restablecer"><i data-lucide="maximize" class="w-4 h-4"></i></button>`:''}
+      <button onclick="closeDoc()" class="text-paper/70 hover:text-paper p-1.5 ml-1" title="Cerrar"><i data-lucide="x" class="w-4.5 h-4.5 w-[18px] h-[18px]"></i></button>
+    </div>
+    <div id="docBody" class="overflow-auto scroll-slim bg-ink/40 p-4 lg:p-8 flex justify-center">${docHTML(o,d)}</div>
+  </div>`;
+  $('#docOverlay').addEventListener('click',e=>{if(e.target.id==='docBody')closeDoc()},{once:true});
+  lucide.createIcons();
+  if(isSvg)wireZoom();
+}
+
+function docHTML(o,d){
+  switch(d.viewer){
+    case 'flange':return `<div id="svgWrap" class="doc-sheet w-[860px] max-w-full cursor-grab">${svgFlange(o)}</div>`;
+    case 'shaft':return `<div id="svgWrap" class="doc-sheet w-[860px] max-w-full cursor-grab">${svgShaft(o)}</div>`;
+    case 'plate':return `<div id="svgWrap" class="doc-sheet w-[860px] max-w-full cursor-grab">${svgPlate(o)}</div>`;
+    case 'cert':return `<div class="doc-sheet w-[760px] max-w-full p-8">${renderCert(o)}</div>`;
+    case 'qcert':return `<div class="doc-sheet w-[760px] max-w-full p-8">${renderQCert(o,d)}</div>`;
+    case 'comercial':return `<div class="doc-sheet w-[760px] max-w-full p-8">${renderComercial(o,d)}</div>`;
+    case 'note':return `<div class="doc-sheet w-[720px] max-w-full p-8">${renderNote(o,d)}</div>`;
+  }
+}
+
+/* --- planos técnicos SVG --- */
+const svgHead=()=>`<defs>
+  <pattern id="hx" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+    <line x1="0" y1="0" x2="0" y2="7" stroke="#22262D" stroke-width="1" opacity=".75"/></pattern>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+    <path d="M0,0L10,5L0,10z" fill="#22262D"/></marker></defs>`;
+const svgFrame=()=>`
+  <rect x="16" y="16" width="808" height="608" fill="none" stroke="#22262D" stroke-width="2"/>
+  <rect x="24" y="24" width="792" height="592" fill="none" stroke="#22262D" stroke-width=".8"/>
+  <line x1="420" y1="16" x2="420" y2="30" stroke="#22262D" stroke-width="1"/>
+  <line x1="420" y1="610" x2="420" y2="624" stroke="#22262D" stroke-width="1"/>
+  <line x1="16" y1="320" x2="30" y2="320" stroke="#22262D" stroke-width="1"/>
+  <line x1="810" y1="320" x2="824" y2="320" stroke="#22262D" stroke-width="1"/>`;
+const t=(x,y,s,size=11,w=400,anchor='start',color='#22262D')=>`<text x="${x}" y="${y}" font-family="'JetBrains Mono',monospace" font-size="${size}" font-weight="${w}" fill="${color}" text-anchor="${anchor}">${s}</text>`;
+const dim=(x1,y1,x2,y2,label,toff=6)=>`
+  <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#22262D" stroke-width=".9" marker-start="url(#ar)" marker-end="url(#ar)"/>
+  ${t((x1+x2)/2,(y1+y2)/2-toff,label,10.5,400,'middle')}`;
+const leader=(x1,y1,x2,y2,label,l2='')=>`
+  <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#22262D" stroke-width=".9" marker-start="url(#ar)"/>
+  ${t(x2+5,y2-3,label,10.5,600)}${l2?t(x2+5,y2+11,l2,9.5,400,'start','#6b6455'):''}`;
+function titleBlock(px,py,part,dwg,mat,rev){
+  const w=270,h=96,x=542,y=520;
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff" stroke="#22262D" stroke-width="1.5"/>
+    <line x1="${x}" y1="${y+24}" x2="${x+w}" y2="${y+24}" stroke="#22262D" stroke-width="1"/>
+    <line x1="${x}" y1="${y+48}" x2="${x+w}" y2="${y+48}" stroke="#22262D" stroke-width=".8"/>
+    <line x1="${x}" y1="${y+72}" x2="${x+w}" y2="${y+72}" stroke="#22262D" stroke-width=".8"/>
+    <line x1="${x+150}" y1="${y+24}" x2="${x+150}" y2="${y+72}" stroke="#22262D" stroke-width=".8"/>
+    <line x1="${x+88}" y1="${y+48}" x2="${x+88}" y2="${y+72}" stroke="#22262D" stroke-width=".8"/>
+    <line x1="${x+88}" y1="${y+72}" x2="${x+88}" y2="${y+96}" stroke="#22262D" stroke-width=".8"/>
+    ${t(x+8,y+16,'QUALITYTRACK — MECANIZADO INDUSTRIAL',11.5,700)}
+    ${t(x+8,y+40,'PIEZA: '+part,9.5)}
+    ${t(x+158,y+40,'N° PLANO: '+dwg,9.5,700)}
+    ${t(x+8,y+64,'MATERIAL: '+mat,9.5)}
+    ${t(x+96,y+64,'REV: '+rev,9.5,700)}
+    ${t(x+158,y+64,'ESC: 1:2',9.5)}
+    ${t(x+8,y+88,'DIB.: L. GODOY',9)}
+    ${t(x+96,y+88,'FECHA: 02.06.2025',9)}
+    ${t(x+158,y+88,'HOJA 1/1 · APROB: V.S.',9)}`;
+}
+const raSym=(x,y,v)=>`<path d="M${x},${y} l5,-9 l5,9" fill="none" stroke="#22262D" stroke-width="1.1"/><line x1="${x-6}" y1="${y}" x2="${x+10}" y2="${y}" stroke="#22262D" stroke-width="1.1"/>${t(x+14,y+3,v,10,600)}`;
+
+function svgFlange(o){
+  const holes=[90,150,210,270,330,30].map(a=>{const r=a*Math.PI/180;return [240+86*Math.cos(r),265-86*Math.sin(r)]});
+  return `<svg viewBox="0 0 840 640" class="w-full block">
+    ${svgHead()}
+    <rect width="840" height="640" fill="#fff"/>
+    ${svgFrame()}
+    <text x="36" y="52" font-family="'JetBrains Mono'" font-size="12" font-weight="700" fill="#22262D">PLANO DE PIEZA — ${o.part.name.toUpperCase()}</text>
+    <text x="36" y="70" font-family="'JetBrains Mono'" font-size="9.5" fill="#7B7565">VISTA FRONTAL Y SECCIÓN A-A · TODAS LAS COTAS EN mm</text>
+    <line x1="36" y1="82" x2="804" y2="82" stroke="#22262D" stroke-width="1"/>
+    <!-- vista frontal -->
+    <circle cx="240" cy="265" r="105" fill="none" stroke="#22262D" stroke-width="2"/>
+    <circle cx="240" cy="265" r="68" fill="none" stroke="#22262D" stroke-width="1.4"/>
+    <circle cx="240" cy="265" r="30" fill="none" stroke="#22262D" stroke-width="1.4"/>
+    <circle cx="240" cy="265" r="86" fill="none" stroke="#22262D" stroke-width=".7" stroke-dasharray="5 5"/>
+    ${holes.map(h=>`<circle cx="${h[0]}" cy="${h[1]}" r="12" fill="none" stroke="#22262D" stroke-width="1.2"/>`).join('')}
+    <line x1="108" y1="265" x2="372" y2="265" stroke="#22262D" stroke-width=".7" stroke-dasharray="16 4 3 4"/>
+    <line x1="240" y1="133" x2="240" y2="397" stroke="#22262D" stroke-width=".7" stroke-dasharray="16 4 3 4"/>
+    ${leader(314,222,378,152,'6× Ø24 CIEGAS','PCD Ø172 · EQ. SP')}
+    ${raSym(352,300,'Ra 3.2')}
+    <!-- sección -->
+    <path d="M480,265 L480,297 L555,297 L555,237 L517,237 L517,265 Z" fill="url(#hx)" stroke="#22262D" stroke-width="1.5"/>
+    <path d="M615,237 L615,297 L690,297 L690,265 L653,265 L653,237 Z" fill="url(#hx)" stroke="#22262D" stroke-width="1.5"/>
+    <line x1="585" y1="222" x2="585" y2="312" stroke="#22262D" stroke-width=".7" stroke-dasharray="16 4 3 4"/>
+    <text x="585" y="212" font-family="'JetBrains Mono'" font-size="10" font-weight="700" fill="#22262D" text-anchor="middle">A-A</text>
+    <line x1="480" y1="297" x2="480" y2="342" stroke="#22262D" stroke-width=".6"/>
+    <line x1="690" y1="297" x2="690" y2="342" stroke="#22262D" stroke-width=".6"/>
+    ${dim(480,336,690,336,'Ø220')}
+    <line x1="517" y1="237" x2="517" y2="212" stroke="#22262D" stroke-width=".6"/>
+    <line x1="653" y1="237" x2="653" y2="212" stroke="#22262D" stroke-width=".6"/>
+    ${dim(517,218,653,218,'Ø136')}
+    <line x1="690" y1="265" x2="722" y2="265" stroke="#22262D" stroke-width=".6"/>
+    <line x1="690" y1="297" x2="722" y2="297" stroke="#22262D" stroke-width=".6"/>
+    <line x1="714" y1="265" x2="714" y2="297" stroke="#22262D" stroke-width=".9" marker-start="url(#ar)" marker-end="url(#ar)"/>
+    ${t(722,284,'32',10.5)}
+    ${leader(615,258,736,242,'Ø60 H7','Ra 1.6')}
+    ${raSym(480,320,'Ra 1.6')}
+    <!-- notas y revisiones -->
+    <text x="36" y="462" font-family="'JetBrains Mono'" font-size="11" font-weight="700" fill="#22262D">NOTAS</text>
+    ${t(36,482,'1. COTAS EN MILÍMETROS.',9.5)}${t(36,498,'2. TOLERANCIAS GENERALES ISO 2768-mK.',9.5)}
+    ${t(36,514,'3. ROTURA DE ARISTAS 0.5 × 45°.',9.5)}${t(36,530,'4. TRATAMIENTO: TEMPLE Y REVENIDO 40–44 HRC.',9.5)}
+    <rect x="36" y="544" width="300" height="56" fill="none" stroke="#22262D" stroke-width=".9"/>
+    <line x1="36" y1="562" x2="336" y2="562" stroke="#22262D" stroke-width=".7"/>
+    <line x1="36" y1="580" x2="336" y2="580" stroke="#22262D" stroke-width=".7"/>
+    ${t(42,556,'REV   DESCRIPCIÓN                      FECHA',8.5,700)}
+    ${t(42,574,'C     TOLERANCIA BORE → H7            12.05.25',8.5)}
+    ${t(42,592,'B     AJUSTE PCD 172                  03.03.25',8.5)}
+    ${titleBlock(542,520,o.part.name.toUpperCase(),o.part.dwg,o.part.material,o.part.rev)}
+  </svg>`;
+}
+
+function svgShaft(o){
+  const seg=[[110,45],[55,62],[190,50],[38,68],[80,46]];
+  let x=90,top=[],bot=[];
+  seg.forEach(s=>{const t1=230-s[1]/2,b1=230+s[1]/2;top.push([x,t1]);bot.push([x,b1]);x+=s[0];top.push([x,t1]);bot.push([x,b1])});
+  const topPath='M'+top.map(p=>p.join(',')).join(' L'),botPath='M'+bot.map(p=>p.join(',')).join(' L');
+  return `<svg viewBox="0 0 840 640" class="w-full block">
+    ${svgHead()}
+    <rect width="840" height="640" fill="#fff"/>
+    ${svgFrame()}
+    <text x="36" y="52" font-family="'JetBrains Mono'" font-size="12" font-weight="700" fill="#22262D">PLANO DE PIEZA — ${o.part.name.toUpperCase()}</text>
+    <text x="36" y="70" font-family="'JetBrains Mono'" font-size="9.5" fill="#7B7565">VISTA FRONTAL Y EXTREMO · TODAS LAS COTAS EN mm</text>
+    <line x1="36" y1="82" x2="804" y2="82" stroke="#22262D" stroke-width="1"/>
+    <path d="${topPath}" fill="none" stroke="#22262D" stroke-width="2"/>
+    <path d="${botPath}" fill="none" stroke="#22262D" stroke-width="2"/>
+    <line x1="90" y1="${230-seg[0][1]/2}" x2="90" y2="${230+seg[0][1]/2}" stroke="#22262D" stroke-width="2"/>
+    <line x1="563" y1="${230-seg[4][1]/2}" x2="563" y2="${230+seg[4][1]/2}" stroke="#22262D" stroke-width="2"/>
+    <line x1="70" y1="230" x2="620" y2="230" stroke="#22262D" stroke-width=".7" stroke-dasharray="16 4 3 4"/>
+    <path d="M330,${230-25} L330,${230-20} L375,${230-20} L375,${230-25}" fill="none" stroke="#22262D" stroke-width="1.4"/>
+    ${leader(145,208,158,152,'Ø45 k6')}${leader(227,199,240,142,'Ø62')}
+    ${leader(350,206,362,150,'Ø50 k6','Ra 0.8 · RECTIFICADO')}${leader(464,197,480,142,'Ø68')}
+    ${raSym(255,190,'Ra 0.8')}
+    <line x1="90" y1="262" x2="90" y2="306" stroke="#22262D" stroke-width=".6"/>
+    <line x1="200" y1="261" x2="200" y2="306" stroke="#22262D" stroke-width=".6"/>
+    <line x1="255" y1="261" x2="255" y2="306" stroke="#22262D" stroke-width=".6"/>
+    <line x1="445" y1="264" x2="445" y2="306" stroke="#22262D" stroke-width=".6"/>
+    <line x1="483" y1="264" x2="483" y2="306" stroke="#22262D" stroke-width=".6"/>
+    <line x1="563" y1="253" x2="563" y2="306" stroke="#22262D" stroke-width=".6"/>
+    ${dim(90,300,200,300,'110')}${dim(200,300,255,300,'55')}${dim(255,300,445,300,'190')}${dim(445,300,483,300,'38')}
+    <line x1="90" y1="330" x2="90" y2="352" stroke="#22262D" stroke-width=".6"/>
+    <line x1="563" y1="330" x2="563" y2="352" stroke="#22262D" stroke-width=".6"/>
+    ${dim(90,346,563,346,'473 TOTAL')}
+    <!-- extremo -->
+    <circle cx="680" cy="230" r="23" fill="none" stroke="#22262D" stroke-width="1.6"/>
+    <path d="M673,207 L673,213 L687,213 L687,207" fill="none" stroke="#22262D" stroke-width="1.4"/>
+    <line x1="650" y1="230" x2="710" y2="230" stroke="#22262D" stroke-width=".7" stroke-dasharray="12 4 3 4"/>
+    <line x1="680" y1="200" x2="680" y2="260" stroke="#22262D" stroke-width=".7" stroke-dasharray="12 4 3 4"/>
+    ${t(680,278,'EXTREMO A',9,400,'middle')}
+    <text x="36" y="462" font-family="'JetBrains Mono'" font-size="11" font-weight="700" fill="#22262D">NOTAS</text>
+    ${t(36,482,'1. COTAS EN MILÍMETROS.',9.5)}${t(36,498,'2. AJUSTES k6 SEGÚN PLANO · ISO 286.',9.5)}
+    ${t(36,514,'3. CHAVETERO SEGÚN DIN 6885.',9.5)}${t(36,530,'4. CEMENTADO Y TEMPLE DONDE SE INDICA.',9.5)}
+    <rect x="36" y="544" width="300" height="56" fill="none" stroke="#22262D" stroke-width=".9"/>
+    <line x1="36" y1="562" x2="336" y2="562" stroke="#22262D" stroke-width=".7"/>
+    <line x1="36" y1="580" x2="336" y2="580" stroke="#22262D" stroke-width=".7"/>
+    ${t(42,556,'REV   DESCRIPCIÓN                      FECHA',8.5,700)}
+    ${t(42,574,'A     EMISIÓN INICIAL                  20.05.25',8.5)}
+    ${t(42,592,'—     —                                —',8.5)}
+    ${titleBlock(542,520,o.part.name.toUpperCase(),o.part.dwg,o.part.material,o.part.rev)}
+  </svg>`;
+}
+
+function svgPlate(o){
+  return `<svg viewBox="0 0 840 640" class="w-full block">
+    ${svgHead()}
+    <rect width="840" height="640" fill="#fff"/>
+    ${svgFrame()}
+    <text x="36" y="52" font-family="'JetBrains Mono'" font-size="12" font-weight="700" fill="#22262D">PLANO DE PIEZA — ${o.part.name.toUpperCase()}</text>
+    <text x="36" y="70" font-family="'JetBrains Mono'" font-size="9.5" fill="#7B7565">VISTA FRONTAL Y LATERAL · TODAS LAS COTAS EN mm</text>
+    <line x1="36" y1="82" x2="804" y2="82" stroke="#22262D" stroke-width="1"/>
+    <rect x="140" y="150" width="380" height="240" fill="none" stroke="#22262D" stroke-width="2"/>
+    <rect x="290" y="210" width="80" height="120" rx="40" fill="none" stroke="#22262D" stroke-width="1.4"/>
+    ${[[176,186],[484,186],[176,354],[484,354]].map(h=>`
+      <circle cx="${h[0]}" cy="${h[1]}" r="9" fill="none" stroke="#22262D" stroke-width="1.2"/>
+      <line x1="${h[0]-15}" y1="${h[1]}" x2="${h[0]+15}" y2="${h[1]}" stroke="#22262D" stroke-width=".6" stroke-dasharray="10 3 2 3"/>
+      <line x1="${h[0]}" y1="${h[1]-15}" x2="${h[0]}" y2="${h[1]+15}" stroke="#22262D" stroke-width=".6" stroke-dasharray="10 3 2 3"/>`).join('')}
+    ${leader(176,186,196,120,'4× Ø18 PASADAS','EQ. SP · POSICIÓN ±0.2')}
+    <line x1="140" y1="390" x2="140" y2="432" stroke="#22262D" stroke-width=".6"/>
+    <line x1="520" y1="390" x2="520" y2="432" stroke="#22262D" stroke-width=".6"/>
+    ${dim(140,426,520,426,'380')}
+    <line x1="104" y1="150" x2="140" y2="150" stroke="#22262D" stroke-width=".6"/>
+    <line x1="104" y1="390" x2="140" y2="390" stroke="#22262D" stroke-width=".6"/>
+    <line x1="112" y1="150" x2="112" y2="390" stroke="#22262D" stroke-width=".9" marker-start="url(#ar)" marker-end="url(#ar)"/>
+    ${t(120,274,'240',10.5,400,'middle')}
+    <!-- lateral -->
+    <rect x="600" y="150" width="24" height="240" fill="url(#hx)" stroke="#22262D" stroke-width="1.5"/>
+    <line x1="612" y1="150" x2="612" y2="390" stroke="#22262D" stroke-width=".7" stroke-dasharray="6 4"/>
+    ${t(612,412,'ESP. 18',9.5,400,'middle')}
+    ${raSym(560,110,'Ra 3.2')}
+    <text x="36" y="462" font-family="'JetBrains Mono'" font-size="11" font-weight="700" fill="#22262D">NOTAS</text>
+    ${t(36,482,'1. COTAS EN MILÍMETROS.',9.5)}${t(36,498,'2. TOLERANCIAS GENERALES ISO 2768-mK.',9.5)}
+    ${t(36,514,'3. ARISTAS VIVAS ROTA 0.3 × 45°.',9.5)}${t(36,530,'4. MARCAR PIEZA SEGÚN CÓDIGO DE OT.',9.5)}
+    <rect x="36" y="544" width="300" height="56" fill="none" stroke="#22262D" stroke-width=".9"/>
+    <line x1="36" y1="562" x2="336" y2="562" stroke="#22262D" stroke-width=".7"/>
+    <line x1="36" y1="580" x2="336" y2="580" stroke="#22262D" stroke-width=".7"/>
+    ${t(42,556,'REV   DESCRIPCIÓN                      FECHA',8.5,700)}
+    ${t(42,574,'B     AUMENTO ESP. 16 → 18             28.02.25',8.5)}
+    ${t(42,592,'A     EMISIÓN INICIAL                  14.11.24',8.5)}
+    ${titleBlock(542,520,o.part.name.toUpperCase(),o.part.dwg,o.part.material,o.part.rev)}
+  </svg>`;
+}
+
+/* --- certificado de materia prima --- */
+function renderCert(o){
+  return `
+  <div class="flex items-start justify-between border-b-2 border-ink pb-4">
+    <div><div class="text-[17px] font-extrabold xdisp">LABICERT S.A.</div>
+      <div class="kicker mt-1">LABORATORIO DE ENSAYOS DE MATERIALES</div></div>
+    <div class="text-right"><div class="mono text-[12px] font-bold">CERTIFICADO N° CERT-2025/1188</div>
+      <div class="mono text-[10.5px] text-muted mt-1">EN 10204 · TIPO 3.1 · PÁG. 1/1</div></div>
+  </div>
+  <div class="grid grid-cols-2 gap-px bg-line border border-line mt-5">
+    ${[['PRODUCTO','Barra calibrada Ø65 — '+o.part.material],['COLADA','88412'],['CLIENTE','QualityTrack S.A.'],['FECHA DE ENSAYO','30.05.2025']].map(c=>`
+      <div class="bg-white p-3"><div class="cellhead">${c[0]}</div><div class="text-[13px] font-semibold mt-0.5">${c[1]}</div></div>`).join('')}
+  </div>
+  <div class="cellhead mt-6 mb-2">COMPOSICIÓN QUÍMICA (%) · ESPECTROMETRÍA</div>
+  <table class="w-full text-[12px] border border-line">
+    <thead><tr class="bg-paper">${['C','Si','Mn','Cr','Mo','P','S'].map(e=>`<th class="th !py-2 text-center">${e}</th>`).join('')}</tr></thead>
+    <tbody><tr class="mono">${['0.41','0.24','0.78','1.05','0.21','0.014','0.012'].map(v=>`<td class="td !py-2 text-center">${v}</td>`).join('')}</tr></tbody>
+  </table>
+  <div class="cellhead mt-6 mb-2">PROPIEDADES MECÁNICAS</div>
+  <table class="w-full text-[12px] border border-line">
+    <thead><tr class="bg-paper text-left"><th class="th !py-2">ENSAYO</th><th class="th !py-2">RESULTADO</th><th class="th !py-2">REQUISITO</th><th class="th !py-2">VEREDICTO</th></tr></thead>
+    <tbody class="mono">
+      <tr class="border-t border-line"><td class="td !py-2">Límite elástico Re</td><td class="td !py-2">685 MPa</td><td class="td !py-2">≥ 650 MPa</td><td class="td !py-2" style="color:var(--ok)">CONFORME</td></tr>
+      <tr class="border-t border-line"><td class="td !py-2">Resistencia a tracción Rm</td><td class="td !py-2">905 MPa</td><td class="td !py-2">900–1100 MPa</td><td class="td !py-2" style="color:var(--ok)">CONFORME</td></tr>
+      <tr class="border-t border-line"><td class="td !py-2">Alargamiento A</td><td class="td !py-2">16 %</td><td class="td !py-2">≥ 12 %</td><td class="td !py-2" style="color:var(--ok)">CONFORME</td></tr>
+      <tr class="border-t border-line"><td class="td !py-2">Dureza (recocido)</td><td class="td !py-2">277 HB</td><td class="td !py-2">≤ 285 HB</td><td class="td !py-2" style="color:var(--ok)">CONFORME</td></tr>
+    </tbody>
+  </table>
+  <div class="flex items-end justify-between mt-8">
+    <div class="text-[11px] text-muted leading-relaxed max-w-[360px]">Se certifica que el material indicado fue ensayado conforme a norma y resulta apto para la fabricación requerida por el cliente.</div>
+    <div class="text-center">
+      <span class="stamp -rotate-3" style="color:var(--ok)">CONFORME</span>
+      <div class="h-px w-[180px] bg-ink mt-4"></div>
+      <div class="mono text-[10px] text-muted mt-1.5">ING. C. BASTIDA · JEFA DE LABORATORIO</div>
+    </div>
+  </div>`;
+}
+
+/* --- certificado interno de calidad --- */
+function renderQCert(o,d){
+  return `
+  <div class="flex items-start justify-between border-b-2 border-ink pb-4">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 bg-ink relative"><span class="absolute inset-0 grid place-items-center text-paper mono font-bold text-[13px]">QT</span><span class="absolute right-0 bottom-0 w-2.5 h-2.5 bg-accent"></span></div>
+      <div><div class="text-[16px] font-extrabold xdisp">QUALITYTRACK S.A.</div><div class="kicker mt-1">MECANIZADO INDUSTRIAL</div></div>
+    </div>
+    <div class="text-right"><div class="mono text-[12px] font-bold">CERTIFICADO INTERNO ${d.num||'CI-—'}</div>
+      <div class="mono text-[10.5px] text-muted mt-1">EMISIÓN ${d.ts}</div></div>
+  </div>
+  <div class="grid grid-cols-2 gap-px bg-line border border-line mt-5">
+    ${[['ORDEN DE TRABAJO',o.id],['CLIENTE',o.client.name],['PIEZA',o.part.name+' ('+o.part.dwg+' rev.'+o.part.rev+')'],['LOTE',o.part.qty+' piezas — '+o.part.material+' · colada '+(o.part.heat||'—')]].map(c=>`
+      <div class="bg-white p-3"><div class="cellhead">${c[0]}</div><div class="text-[12.5px] font-semibold mt-0.5">${esc(String(c[1]))}</div></div>`).join('')}
+  </div>
+  <div class="cellhead mt-6 mb-2">REGISTROS DE INSPECCIÓN DEL LOTE</div>
+  <table class="w-full text-[12px] border border-line">
+    <thead><tr class="bg-paper text-left"><th class="th !py-2">CÓD.</th><th class="th !py-2">CONTROL</th><th class="th !py-2">INSPECTOR</th><th class="th !py-2">FECHA</th><th class="th !py-2">VEREDICTO</th></tr></thead>
+    <tbody>${o.quality.plan.map(p=>{const r=[...o.quality.records].reverse().find(x=>x.code===p[0]);
+      return `<tr class="border-t border-line"><td class="td !py-2 mono font-bold">${p[0]}</td><td class="td !py-2">${p[1]}</td>
+      <td class="td !py-2 mono text-[11px]">${r?esc(r.inspector):'—'}</td><td class="td !py-2 mono text-[11px]">${r?r.ts:'—'}</td>
+      <td class="td !py-2" style="color:${r&&r.result==='OK'?'var(--ok)':'var(--muted)'}">${r&&r.result==='OK'?'CONFORME':'—'}</td></tr>`}).join('')}</tbody>
+  </table>
+  <div class="flex items-end justify-between mt-8">
+    <div class="text-[11px] text-muted leading-relaxed max-w-[380px]">Se certifica que el lote identificado cumple el plan de inspección y las especificaciones del plano de referencia. Documentación de respaldo disponible en el expediente de trazabilidad ${o.id}.</div>
+    <div class="text-center">
+      <span class="stamp -rotate-3" style="color:var(--ok)">LIBERADO</span>
+      <div class="h-px w-[180px] bg-ink mt-4"></div>
+      <div class="mono text-[10px] text-muted mt-1.5">A. RÍOS · JEFA DE CONTROL DE CALIDAD</div>
+    </div>
+  </div>`;
+}
+
+/* --- documentos comerciales (cotización / OC / remito / factura) --- */
+function renderComercial(o,d){
+  const conf={
+    COT:{t:'COTIZACIÓN',from:'QUALITYTRACK S.A. — MECANIZADO INDUSTRIAL',to:o.client.name},
+    OC:{t:'ORDEN DE COMPRA',from:d.from||o.client.name,to:'QUALITYTRACK S.A.'},
+    REM:{t:'REMISO / REMITO',from:'QUALITYTRACK S.A.',to:o.client.name},
+    FAC:{t:'FACTURA A',from:'QUALITYTRACK S.A.',to:o.client.name}
+  }[d.subtype||'COT'];
+  const items=(o.quote?.items||[]).map(it=>({...it}));
+  return `
+  <div class="flex items-start justify-between border-b-2 border-ink pb-4">
+    <div><div class="text-[17px] font-extrabold xdisp">${conf.t} ${d.num?'N° '+d.num:''}</div>
+      <div class="kicker mt-1">DOCUMENTO COMERCIAL VINCULADO AL EXPEDIENTE ${o.id}</div></div>
+    <div class="text-right mono text-[10.5px] text-muted">EMISIÓN<br><b class="text-ink text-[12px]">${d.ts}</b></div>
+  </div>
+  <div class="grid grid-cols-2 gap-px bg-line border border-line mt-5">
+    <div class="bg-white p-3"><div class="cellhead">EMITE</div><div class="text-[13px] font-semibold mt-0.5">${conf.from}</div></div>
+    <div class="bg-white p-3"><div class="cellhead">DIRIGIDO A</div><div class="text-[13px] font-semibold mt-0.5">${esc(conf.to)}</div></div>
+  </div>
+  <table class="w-full text-[12px] border border-line mt-5">
+    <thead><tr class="bg-paper text-left"><th class="th !py-2">DESCRIPCIÓN</th><th class="th !py-2 text-right">CANT.</th><th class="th !py-2 text-right">P. UNITARIO</th><th class="th !py-2 text-right">SUBTOTAL</th></tr></thead>
+    <tbody>${items.map(it=>`<tr class="border-t border-line">
+      <td class="td !py-2.5">${esc(it.d)}</td><td class="td !py-2.5 mono text-right">${it.q}</td>
+      <td class="td !py-2.5 mono text-right">${fmoney(it.u)}</td><td class="td !py-2.5 mono text-right font-semibold">${fmoney(it.q*it.u)}</td></tr>`).join('')}
+    <tr class="border-t-2 border-ink bg-paper"><td class="td !py-3 font-bold" colspan="3">TOTAL</td>
+      <td class="td !py-3 mono text-right font-bold text-[13px]">${fmoney(o.quote?.total||items.reduce((a,i)=>a+i.q*i.u,0))}</td></tr></tbody>
+  </table>
+  ${d.subtype==='REM'?`<div class="border border-line mt-5 p-3.5"><div class="cellhead">RECIBIDO POR (CLIENTE)</div>
+    <div class="h-px bg-ink w-[260px] mt-6"></div><div class="mono text-[10px] text-muted mt-1.5">${esc(d.receivedBy||'—')} · ${d.ts}</div></div>`:''}
+  <div class="flex items-end justify-between mt-8">
+    <div class="mono text-[10px] text-muted leading-relaxed">${d.subtype==='COT'?'Validez de la oferta: '+(o.quote?.valid||'15 días')+' · Precios con IVA incluido.':d.subtype==='OC'?'Condiciones de entrega según cotización aceptada.':'Documentación respaldante disponible en el expediente '+o.id+'.'}</div>
+    <div class="text-center"><div class="h-px w-[180px] bg-ink"></div><div class="mono text-[10px] text-muted mt-1.5">FIRMA Y SELLO</div></div>
+  </div>`;
+}
+
+/* --- notas / solicitudes / conformidades --- */
+function renderNote(o,d){
+  return `
+  <div class="flex items-start justify-between border-b-2 border-ink pb-4">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 bg-ink relative"><span class="absolute inset-0 grid place-items-center text-paper mono font-bold text-[13px]">QT</span><span class="absolute right-0 bottom-0 w-2.5 h-2.5 bg-accent"></span></div>
+      <div><div class="text-[16px] font-extrabold xdisp">QUALITYTRACK S.A.</div><div class="kicker mt-1">MECANIZADO INDUSTRIAL · EXPEDIENTE ${o.id}</div></div>
+    </div>
+    <div class="text-right mono text-[10.5px] text-muted">EMISIÓN<br><b class="text-ink text-[12px]">${d.ts}</b></div>
+  </div>
+  <div class="mt-6 text-[16px] font-bold xdisp">${esc(d.title)}</div>
+  <div class="h-px bg-line mt-3 mb-5"></div>
+  <div class="grid gap-3.5">${(d.body||['Documento del expediente.']).map(p=>`<p class="text-[13.5px] leading-relaxed">${esc(p)}</p>`).join('')}</div>
+  <div class="flex items-end justify-between mt-10">
+    <div class="text-[11px] text-muted leading-relaxed max-w-[340px]">Registro digital del expediente. Verificación de integridad: <span class="mono">${hash(d.id+d.title)}</span></div>
+    <div class="text-center">
+      ${d.stamp?`<span class="stamp -rotate-3 mb-4" style="color:var(--${{RECIBIDO:'ink',APROBADO:'ok',CONFORME:'ok',LIBERADO:'ok'}[d.stamp]||'ink'})">${d.stamp}</span>`:''}
+      <div class="h-px w-[180px] bg-ink"></div>
+      <div class="mono text-[10px] text-muted mt-1.5">${esc(d.signedBy||'FIRMA AUTORIZADA')}</div>
+    </div>
+  </div>`;
+}
+
+/* --- modales --- */
+function openModal(title,html){
+  const r=$('#modalRoot');
+  r.className='fixed inset-0 z-[60] flex items-center justify-center p-4 bg-ink/50 backdrop-blur-[2px]';
+  r.innerHTML=`<div class="sheet border-2 border-ink bg-card shadow-hard w-full max-w-[520px] max-h-full flex flex-col">
+    <div class="flex items-center justify-between px-5 py-3.5 border-b-2 border-ink bg-paper">
+      <span class="kicker" style="color:var(--ink)">${esc(title)}</span>
+      <button onclick="closeModal()" class="text-muted hover:text-ink"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+    <div class="p-5 overflow-auto scroll-slim">${html}</div></div>`;
+  r.onclick=e=>{if(e.target===r)closeModal()};
+  lucide.createIcons();
+}
+function closeModal(){$('#modalRoot').className='fixed inset-0 z-[60] hidden';$('#modalRoot').innerHTML=''}
+
+/* --- notificaciones --- */
+function toast(type,title,msg){
+  const map={ok:['check-circle-2','ok'],err:['alert-triangle','danger'],info:['info','ink']};
+  const [ic,color]=map[type]||map.info;
+  const el=document.createElement('div');
+  el.className='toast border-2 bg-card shadow-hard p-3.5 flex gap-3 items-start';
+  el.style.borderColor=`var(--${color})`;
+  el.innerHTML=`<i data-lucide="${ic}" class="w-4 h-4 mt-0.5 shrink-0" style="color:var(--${color})"></i>
+    <div class="min-w-0 flex-1"><div class="text-[12.5px] font-bold leading-tight">${esc(title)}</div>
+    <div class="text-[12px] text-muted mt-0.5 leading-snug">${esc(msg)}</div></div>
+    <button class="text-muted hover:text-ink shrink-0" onclick="this.parentElement.remove()"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>`;
+  $('#toasts').appendChild(el);
+  lucide.createIcons();
+  setTimeout(()=>{el.style.transition='opacity .3s, transform .3s';el.style.opacity='0';el.style.transform='translateX(14px)';setTimeout(()=>el.remove(),320)},4600);
+}
+
+/* --- navegación --- */
+function renderNav(){
+  const tabs=[['board','layout-grid','TRABAJOS'],['trace','scan-search','TRAZABILIDAD'],['new','file-plus','NUEVA SOLICITUD']];
+  $('#navTabs').innerHTML=tabs.map(([v,ic,l])=>`
+    <button onclick="setView('${v}')" class="flex items-center gap-2 px-4 border-b-[3px] transition-colors ${state.view===v?'border-accent text-ink':'border-transparent text-muted hover:text-ink'}" style="font:600 10.5px 'JetBrains Mono';letter-spacing:.14em">
+      <i data-lucide="${ic}" class="w-3.5 h-3.5"></i>${l}</button>`).join('');
+}
+function render(){
+  renderNav();
+  if(state.view==='board')renderBoard();
+  else if(state.view==='file')renderFile();
+  else if(state.view==='trace')renderTrace();
+  else if(state.view==='new')renderNew();
+}
+
+/* --- buscador global del header --- */
+function gSearchInput(v){
+  const dp=$('#searchDrop'),inp=$('#gSearch');
+  const q=v.trim().toLowerCase();
+  if(!q){dp.classList.add('hidden');return}
+  const res=OTS.filter(o=>matchQuery(o,q)).slice(0,6);
+  const r=inp.getBoundingClientRect();
+  dp.style.top=(r.bottom+6)+'px';
+  dp.style.left=Math.max(8,r.left)+'px';
+  dp.innerHTML=res.length
+    ?`<div class="px-4 py-2 bg-ink text-paper kicker">RESULTADOS · ${res.length} · ENTER ABRE EL PRIMERO</div>`
+     +res.map(o=>`<button data-ot="${o.id}" onclick="gsOpen('${o.id}')" class="w-full text-left px-4 py-3 border-b border-line last:border-0 hover:bg-paper flex items-center gap-3">
+        <span class="tag shrink-0" style="color:var(--${ST[o.status].c})">${ST[o.status].l}</span>
+        <span class="min-w-0 flex-1"><span class="block text-[12.5px] font-bold truncate">${o.id} — ${esc(o.part.name)}</span>
+        <span class="block mono text-[10.5px] text-muted truncate">${esc(o.client.name)} · ${esc(o.part.material)} · ${esc(o.request.ref)}</span></span>
+        <i data-lucide="corner-down-left" class="w-3.5 h-3.5 text-muted shrink-0"></i></button>`).join('')
+    :`<div class="px-4 py-4 text-[12px] text-muted">Sin resultados para “${esc(q)}”.</div>`;
+  dp.classList.remove('hidden');
+  lucide.createIcons();
+}
+function gsOpen(id){$('#searchDrop').classList.add('hidden');$('#gSearch').value='';openFile(id)}
+
+/* --- reloj y arranque --- */
+function tickClock(){
+  const d=new Date();
+  $('#clock').textContent=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeModal();closeDoc();$('#searchDrop').classList.add('hidden')}
+});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#searchDrop')&&!e.target.closest('#gSearch'))$('#searchDrop').classList.add('hidden');
+});
+ $('#gSearch').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){const b=$('#searchDrop').querySelector('button[data-ot]');if(b)gsOpen(b.dataset.ot)}
+});
+
+renderNav();render();
+tickClock();setInterval(tickClock,1000);
+lucide.createIcons();
+</script>
+</body>
+</html>
