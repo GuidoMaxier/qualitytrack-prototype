@@ -1,0 +1,51 @@
+name: CI - Calidad y Compilacion
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validacion de Calidad y Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Generar cliente de Prisma 7
+        run: pnpm exec prisma generate
+
+      - name: Verificacion de TypeScript
+        run: pnpm typecheck
+
+      - name: Analisis estatico con ESLint
+        run: pnpm lint
+
+      - name: Compilacion de produccion (Next.js build)
+        run: pnpm build
+        env:
+          DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+          DATABASE_URL_UNPOOLED: "postgresql://dummy:dummy@localhost:5432/dummy"
+          BETTER_AUTH_SECRET: "ci-dummy-secret-12345678901234567890"
+          BETTER_AUTH_URL: "http://localhost:3000"

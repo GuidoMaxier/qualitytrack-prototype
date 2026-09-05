@@ -1,0 +1,37 @@
+# QualityTrack — Tablero Kanban & Backlog
+
+Seguimiento de hitos y tareas del repositorio `GuidoMaxier/qualitytrack-prototype`, alineado con los Milestones e Issues de GitHub.
+
+---
+
+## Milestones
+
+| Milestone | Estado | Descripcion |
+| :--- | :---: | :--- |
+| **M1: Setup Base & Landing Page** | Completado | Next.js 16, Prisma 7, Neon, Better Auth y Landing CAD Blueprint. |
+| **M2: DevOps, Calidad & CI/CD** | En Progreso | Husky, Commitlint, lint-staged, validacion de tipos y GitHub Actions. |
+| **M3: Base de Datos Prisma 7 & Seed** | Pendiente | Modelado industrial completo (OTs, fases, auditorias) y seed. |
+| **M4: Dashboard Industrial & Expediente** | Pendiente | Tablero Kanban interactivo, tabla de OTs y modal de expediente. |
+
+---
+
+## Estado de Tareas
+
+### Backlog (To Do)
+- [ ] **[#3](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/3)** `feat(db)`: Disenar esquema Prisma 7 con `OrdenTrabajo`, `OTFase`, `AuditoriaCalidad`, `Cliente`.
+- [ ] **[#3](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/3)** `feat(db)`: Crear `prisma/seed.ts` con datos industriales reales (`OT-2025-0104`, etc.).
+- [ ] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `feat(dashboard)`: Construir layout de `/dashboard` con metricas, reloj en vivo y navegacion.
+- [ ] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `feat(dashboard)`: Tablero Kanban interactivo con drag & drop / estados de fase.
+- [ ] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `feat(dashboard)`: Modal de Expediente Tecnico Unificado con timeline de calidad.
+
+### En Progreso
+- [ ] **[#1](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/1)** `feat(devops)`: Configuracion de Husky, Commitlint y `lint-staged`.
+- [ ] **[#2](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/2)** `ci`: Workflow de GitHub Actions (`ci.yml`) con validacion de build y tipos.
+
+### Completado
+- [x] Inicializacion de Next.js 16.3.4 (App Router) y Tailwind CSS v4.
+- [x] Configuracion de Prisma 7 con driver serverless de Neon PostgreSQL (`@prisma/adapter-neon`).
+- [x] Configuracion de Better Auth y variables de entorno.
+- [x] Implementacion de Landing Page industrial (`/`) con plano CAD SVG animado.
+- [x] Verificacion de `pnpm lint` y `pnpm build` sin errores.
+- [x] Commit atomico en `main` (`d6df4d1`).
