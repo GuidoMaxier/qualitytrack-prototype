@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# QualityTrack — Trazabilidad para el Mecanizado Industrial
 
-## Getting Started
+Plataforma integral de gestion de calidad, seguimiento de ordenes de trabajo (OT) y expediente tecnico unificado para talleres de mecanizado y matriceria de alta precision.
 
-First, run the development server:
+- **URL de Produccion:** [https://qualitytrack-prototype.vercel.app](https://qualitytrack-prototype.vercel.app)
+- **Repositorio:** [GuidoMaxier/qualitytrack-prototype](https://github.com/GuidoMaxier/qualitytrack-prototype)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## Stack Tecnologico
+
+- **Framework:** [Next.js 16 (App Router)](https://nextjs.org) con React 19 y TypeScript 5
+- **Estilos:** [Tailwind CSS v4](https://tailwindcss.com) con diseno y estetica de terminal industrial CAD
+- **Base de Datos:** [Neon PostgreSQL Serverless](https://neon.tech)
+- **ORM:** [Prisma 7](https://www.prisma.io) con `@prisma/adapter-neon`
+- **Autenticacion:** [Better Auth](https://www.better-auth.com) con sesiones en base de datos
+- **Validacion:** [Zod 4](https://zod.dev)
+- **Iconografia:** [Lucide React](https://lucide.dev)
+- **DevOps & Calidad:** Husky, Commitlint, lint-staged y GitHub Actions CI
+
+---
+
+## Estructura del Proyecto
+
+```text
+qualitytrack-prototype/
+├── app/                  # Next.js App Router (Landing, Dashboard, Auth API)
+├── components/           # Componentes modulares
+│   ├── landing/          # Plano CAD animado, metricas, terminal boot, etc.
+│   └── dashboard/        # Kanban, tablas OTs y expediente unico
+├── docs/                 # Documentacion tecnica, DER, Backlog y KANBAN
+├── lib/                  # Clientes Prisma, Better Auth y validaciones Zod
+├── prisma/               # Esquema de base de datos y scripts de seed
+└── .github/workflows/    # Pipeline automatizado de CI
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Comandos Principales
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Desarrollo local
+pnpm dev
 
-## Learn More
+# Verificacion estricta de tipos
+pnpm typecheck
 
-To learn more about Next.js, take a look at the following resources:
+# Linting
+pnpm lint
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Compilacion de produccion
+pnpm build
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Sincronizacion de esquema con base de datos
+pnpm exec prisma db push
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Generacion de cliente Prisma
+pnpm exec prisma generate
+```
