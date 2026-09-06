@@ -12,6 +12,7 @@ export async function GET() {
                 cliente: true,
               },
             },
+            items: { orderBy: { numero_linea: "asc" } },
           },
         },
         fases: {
@@ -30,6 +31,7 @@ export async function GET() {
               select: { id: true, name: true },
             },
           },
+          orderBy: { numero_auditoria: "asc" },
         },
         notas: {
           include: {
@@ -38,6 +40,38 @@ export async function GET() {
             },
           },
           orderBy: { createdAt: "desc" },
+        },
+        noConformidades: {
+          select: {
+            id: true,
+            numero: true,
+            estado: true,
+            codigo_control: true,
+            descripcion: true,
+            disposicion: true,
+            fecha_apertura: true,
+            fecha_cierre: true,
+          },
+          orderBy: { fecha_apertura: "desc" },
+        },
+        documentos: {
+          select: {
+            id: true,
+            tipo: true,
+            numero: true,
+            titulo: true,
+            etapa: true,
+            sello: true,
+            emision: true,
+            firmado_por: true,
+            archivo_nombre: true,
+            mime_type: true,
+          },
+          orderBy: { emision: "asc" },
+        },
+        eventos: {
+          select: { id: true, fecha: true, actor: true, texto: true },
+          orderBy: { fecha: "desc" },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -52,12 +86,28 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
+    // Expedientes comerciales (cotizaciones sin OT generada aún)
+    const cotizaciones = await prisma.cotizacion.findMany({
+      where: { ordenTrabajo: { is: null } },
+      include: {
+        solicitud: {
+          include: {
+            cliente: true,
+            _count: { select: { documentos: true, eventos: true } },
+          },
+        },
+        items: { orderBy: { numero_linea: "asc" } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
     // Estadísticas
     const totalActivas = ordenes.filter((o) => o.estado !== "ENTREGADA").length;
     const enProduccion = ordenes.filter((o) => o.estado === "EN_PRODUCCION" || o.estado === "NO_CONFORME").length;
     const enCalidad = ordenes.filter((o) => o.estado === "EN_CALIDAD").length;
     const entregadas = ordenes.filter((o) => o.estado === "ENTREGADA").length;
-    const noConformes = ordenes.filter((o) => o.estado === "NO_CONFORME").length;
+    const noConformes = await prisma.noConformidad.count({ where: { estado: "ABIERTA" } });
+    const cotizacionesPendientes = cotizaciones.filter((c) => c.estado !== "APROBADA").length;
 
     return NextResponse.json({
       success: true,
@@ -67,9 +117,10 @@ export async function GET() {
         enCalidad,
         noConformes,
         entregadas,
-        cotizacionesPendientes: solicitudes.length,
+        cotizacionesPendientes,
       },
       ordenes,
+      cotizaciones,
       solicitudesPendientes: solicitudes,
     });
   } catch (error) {
