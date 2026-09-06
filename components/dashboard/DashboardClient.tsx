@@ -219,13 +219,16 @@ export default function DashboardClient() {
             >
               TRAZABILIDAD
             </button>
-            <Link
-              href="/api-reference"
-              target="_blank"
-              className="flex items-center gap-2 px-4 border-b-[3px] border-transparent font-mono text-[11px] font-bold tracking-wider uppercase text-[var(--muted)] hover:text-[var(--accent)] transition-colors"
+            <button
+              onClick={() => { setActiveTab("new"); setSelectedOT(null); }}
+              className={`flex items-center gap-2 px-4 border-b-[3px] font-mono text-[11px] font-bold tracking-wider uppercase transition-colors ${
+                activeTab === "new"
+                  ? "border-[var(--accent)] text-[var(--ink)]"
+                  : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+              }`}
             >
-              API DOCS (SCALAR)
-            </Link>
+              NUEVA SOLICITUD
+            </button>
           </nav>
 
           <div className="flex-1"></div>

@@ -1,9 +1,10 @@
+import { hashPassword } from "better-auth/crypto";
 import { prisma } from "../lib/prisma";
 
 async function main() {
-  console.log("🌱 Iniciando seed de datos industriales de QualityTrack...");
+  console.log("🌱 Iniciando seed maestro de datos industriales con credenciales Better Auth...");
 
-  // 1. Limpiar datos existentes (en orden inverso de dependencias)
+  // Limpieza inicial
   await prisma.auditoriaChecklistRespuesta.deleteMany({});
   await prisma.auditoriaCalidad.deleteMany({});
   await prisma.oTNota.deleteMany({});
@@ -17,91 +18,103 @@ async function main() {
   await prisma.faseOperarioHabilitado.deleteMany({});
   await prisma.faseCatalogo.deleteMany({});
   await prisma.cliente.deleteMany({});
+  await prisma.session.deleteMany({});
+  await prisma.account.deleteMany({});
+  await prisma.user.deleteMany({});
 
-  // 2. Usuarios del sistema (los 5 roles)
-  await prisma.user.upsert({
-    where: { email: "gerente@qualitytrack.com" },
-    update: {},
-    create: {
-      name: "Ing. Roberto Mancini",
-      email: "gerente@qualitytrack.com",
-      rol: "GERENTE",
-      telefono: "+54 11 4555-0101",
-    },
+  const defaultHashedPassword = await hashPassword("Clave/123.");
+
+  // Helper para crear usuario con Account de Better Auth
+  async function createUserWithAuth(data: {
+    name: string;
+    email: string;
+    rol: string;
+    telefono: string;
+    tipo_tarea: string;
+  }) {
+    const user = await prisma.user.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        rol: data.rol,
+        telefono: data.telefono,
+        tipo_tarea: data.tipo_tarea,
+        emailVerified: true,
+      },
+    });
+
+    await prisma.account.create({
+      data: {
+        accountId: user.id,
+        providerId: "credential",
+        userId: user.id,
+        password: defaultHashedPassword,
+      },
+    });
+
+    return user;
+  }
+
+  // 1. Usuarios con los 5 roles y clave "Clave/123."
+  const gerente = await createUserWithAuth({
+    name: "Ing. Roberto Mancini",
+    email: "gerente@qualitytrack.com",
+    rol: "GERENTE",
+    telefono: "+54 11 4555-0101",
+    tipo_tarea: "Dirección y Gestión Integral",
   });
 
-  const jefeProd = await prisma.user.upsert({
-    where: { email: "planificacion@qualitytrack.com" },
-    update: {},
-    create: {
-      name: "L. Godoy",
-      email: "planificacion@qualitytrack.com",
-      rol: "JEFE_PRODUCCION",
-      telefono: "+54 11 4555-0102",
-    },
+  const jefeProd = await createUserWithAuth({
+    name: "L. Godoy",
+    email: "planificacion@qualitytrack.com",
+    rol: "JEFE_PRODUCCION",
+    telefono: "+54 11 4555-0102",
+    tipo_tarea: "Planificación, Cotizaciones y Asignación",
   });
 
-  const vendedor = await prisma.user.upsert({
-    where: { email: "comercial@qualitytrack.com" },
-    update: {},
-    create: {
-      name: "P. Lanza",
-      email: "comercial@qualitytrack.com",
-      rol: "VENDEDOR",
-      telefono: "+54 11 4555-0103",
-    },
+  const vendedor = await createUserWithAuth({
+    name: "P. Lanza",
+    email: "comercial@qualitytrack.com",
+    rol: "VENDEDOR",
+    telefono: "+54 11 4555-0103",
+    tipo_tarea: "Gestión Comercial y Clientes",
   });
 
-  const auditor = await prisma.user.upsert({
-    where: { email: "calidad@qualitytrack.com" },
-    update: {},
-    create: {
-      name: "A. Ríos",
-      email: "calidad@qualitytrack.com",
-      rol: "CALIDAD",
-      telefono: "+54 11 4555-0104",
-    },
+  const auditor = await createUserWithAuth({
+    name: "A. Ríos",
+    email: "calidad@qualitytrack.com",
+    rol: "CALIDAD",
+    telefono: "+54 11 4555-0104",
+    tipo_tarea: "Auditoría, Ensayos y Checklist 7 Puntos",
   });
 
-  const opSuarez = await prisma.user.upsert({
-    where: { email: "r.suarez@qualitytrack.com" },
-    update: {},
-    create: {
-      name: "R. Suárez",
-      email: "r.suarez@qualitytrack.com",
-      rol: "OPERARIO",
-      tipo_tarea: "Tornero / Operario Sierra",
-      telefono: "+54 11 4555-0105",
-    },
+  const opSuarez = await createUserWithAuth({
+    name: "R. Suárez",
+    email: "r.suarez@qualitytrack.com",
+    rol: "OPERARIO",
+    telefono: "+54 11 4555-0105",
+    tipo_tarea: "Tornero / Operario Sierra CNC",
   });
 
-  const opIbarra = await prisma.user.upsert({
-    where: { email: "m.ibarra@qualitytrack.com" },
-    update: {},
-    create: {
-      name: "M. Ibarra",
-      email: "m.ibarra@qualitytrack.com",
-      rol: "OPERARIO",
-      tipo_tarea: "Mecanizador CNC / Fresador",
-      telefono: "+54 11 4555-0106",
-    },
+  const opIbarra = await createUserWithAuth({
+    name: "M. Ibarra",
+    email: "m.ibarra@qualitytrack.com",
+    rol: "OPERARIO",
+    telefono: "+54 11 4555-0106",
+    tipo_tarea: "Mecanizador CNC / Fresador Haas",
   });
 
-  const opParedes = await prisma.user.upsert({
-    where: { email: "j.paredes@qualitytrack.com" },
-    update: {},
-    create: {
-      name: "J. Paredes",
-      email: "j.paredes@qualitytrack.com",
-      rol: "OPERARIO",
-      tipo_tarea: "Taladrista / Banco y Ajuste",
-      telefono: "+54 11 4555-0107",
-    },
+  const opParedes = await createUserWithAuth({
+    name: "J. Paredes",
+    email: "j.paredes@qualitytrack.com",
+    rol: "OPERARIO",
+    telefono: "+54 11 4555-0107",
+    tipo_tarea: "Taladrista Radial / Banco y Ajuste",
   });
 
-  console.log("✓ Usuarios con los 5 roles creados.");
+  console.log("✓ Usuarios creados con credenciales oficiales (Clave/123.).");
 
-  // 3. Catálogo de Fases Industriales
+  // 2. Catálogo de Fases Industriales
   const fCorte = await prisma.faseCatalogo.create({
     data: { codigo: "CORTE", nombre: "Corte de materia prima", descripcion: "Corte en sierra cinta o plasma CNC" },
   });
@@ -124,9 +137,20 @@ async function main() {
     data: { codigo: "CONTROL_FINAL", nombre: "Inspección dimensional final", descripcion: "Mesa de control de calidad" },
   });
 
-  console.log("✓ Catálogo de fases industriales creado.");
+  // Habilitaciones de operarios por fase
+  await prisma.faseOperarioHabilitado.createMany({
+    data: [
+      { fase_catalogo_id: fCorte.id, operario_id: opSuarez.id, asignado_por_id: gerente.id },
+      { fase_catalogo_id: fTorneado.id, operario_id: opIbarra.id, asignado_por_id: gerente.id },
+      { fase_catalogo_id: fFresado.id, operario_id: opIbarra.id, asignado_por_id: gerente.id },
+      { fase_catalogo_id: fTaladrado.id, operario_id: opParedes.id, asignado_por_id: gerente.id },
+      { fase_catalogo_id: fRectificado.id, operario_id: opSuarez.id, asignado_por_id: gerente.id },
+    ],
+  });
 
-  // 4. Clientes
+  console.log("✓ Catálogo de fases y matriz de competencias creados.");
+
+  // 3. Clientes
   const cliDelta = await prisma.cliente.create({
     data: {
       codigo: "CLI-014",
@@ -162,7 +186,7 @@ async function main() {
 
   console.log("✓ Clientes industriales creados.");
 
-  // 5. Caso OT-2025-0104 · EN PRODUCCIÓN (Flanza de acople Ø220)
+  // 4. OT-2025-0104 · EN PRODUCCIÓN (Flanza de acople Ø220)
   const solDelta = await prisma.solicitud.create({
     data: {
       numero_solicitud: "RFQ-2214",
@@ -205,7 +229,6 @@ async function main() {
     },
   });
 
-  // Fases de OT-2025-0104
   await prisma.oTFase.createMany({
     data: [
       {
@@ -263,7 +286,6 @@ async function main() {
     ],
   });
 
-  // Notas técnicas de OT-2025-0104
   await prisma.oTNota.createMany({
     data: [
       {
@@ -281,7 +303,7 @@ async function main() {
     ],
   });
 
-  // 6. Caso OT-2025-0103 · EN CONTROL DE CALIDAD (Eje excéntrico)
+  // 5. OT-2025-0103 · EN CONTROL DE CALIDAD (Eje excéntrico)
   const solAgro = await prisma.solicitud.create({
     data: {
       numero_solicitud: "RFQ-2201",
@@ -323,7 +345,6 @@ async function main() {
     },
   });
 
-  // Fases de OT-2025-0103 completas
   await prisma.oTFase.createMany({
     data: [
       {
@@ -356,7 +377,6 @@ async function main() {
     ],
   });
 
-  // Auditoría de Calidad para OT-2025-0103
   const audit103 = await prisma.auditoriaCalidad.create({
     data: {
       orden_trabajo_id: ot103.id,
@@ -379,7 +399,7 @@ async function main() {
     ],
   });
 
-  // 7. Caso OT-2025-0102 · LISTA PARA ENTREGA (Soporte de bomba en 316L)
+  // 6. OT-2025-0102 · LISTA PARA ENTREGA (Soporte de bomba en 316L)
   const solHidro = await prisma.solicitud.create({
     data: {
       numero_solicitud: "RFQ-2196",
@@ -422,12 +442,12 @@ async function main() {
     },
   });
 
-  console.log("✓ Órdenes de trabajo, fases, notas y auditorías sembradas con éxito.");
+  console.log("✅ Seed maestro completado con éxito con credenciales listas para login.");
 }
 
 main()
   .catch((e) => {
-    console.error("Error al sembrar la base de datos:", e);
+    console.error("Error al ejecutar seed:", e);
     process.exit(1);
   })
   .finally(async () => {
