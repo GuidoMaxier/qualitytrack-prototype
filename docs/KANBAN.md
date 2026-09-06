@@ -11,21 +11,23 @@ Seguimiento de hitos y tareas del repositorio `GuidoMaxier/qualitytrack-prototyp
 | **M1: Setup Base & Landing Page** | Completado | Next.js 16, Prisma 7, Neon, Better Auth y Landing CAD Blueprint. |
 | **M2: DevOps, Calidad & CI/CD** | Completado | Husky, Commitlint, lint-staged, validacion de tipos y GitHub Actions. |
 | **M3: Base de Datos Prisma 7 & Seed** | Completado | Modelado industrial completo (OTs, fases, auditorias) y seed poblado. |
-| **M4: Dashboard Industrial & Expediente** | En Progreso | Tablero Kanban interactivo, tabla de OTs y modal de expediente. |
+| **M4: Dashboard Industrial & Expediente** | Completado | Tablero Kanban, tabla de OTs, expediente unico y docs con Scalar. |
 
 ---
 
 ## Estado de Tareas
 
 ### Backlog (To Do)
-- [ ] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `feat(dashboard)`: Acciones de transición de estado en vivo (Avanzar fase / Registrar auditoría desde UI).
+- [ ] `feat(realtime)`: Webhooks / Server-Sent Events para actualizacion en tiempo real de avances en planta.
+- [ ] `feat(reports)`: Exportacion a PDF del certificado de calidad e informe de trazabilidad.
 
 ### En Progreso
-- [ ] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `feat(dashboard)`: Dashboard industrial con métricas, tabla filtrable y expediente técnico unificado.
+- [ ] `testing`: Pruebas de usuario y validacion funcional de flujos.
 
 ### Completado
-- [x] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `docs(api)`: Documentación interactiva OpenAPI montada en `/api-reference` con Scalar.
-- [x] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `feat(api)`: Endpoints de lectura y actualización `/api/ordenes-trabajo` y `/api/ot-fases`.
+- [x] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `feat(dashboard)`: Dashboard industrial con metricas, tabla filtrable y expediente tecnico unificado.
+- [x] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `docs(api)`: Documentacion interactiva OpenAPI montada en `/api-reference` con Scalar.
+- [x] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `feat(api)`: Endpoints de lectura y actualizacion `/api/ordenes-trabajo` y `/api/ot-fases`.
 
 ### Completado
 - [x] Inicializacion de Next.js 16.3.4 (App Router) y Tailwind CSS v4.
