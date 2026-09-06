@@ -22,6 +22,7 @@
     "@neondatabase/serverless": "^1.1.0",
     "@prisma/adapter-neon": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "@scalar/nextjs-api-reference": "^0.11.17",
     "better-auth": "^1.7.2",
     "dotenv": "^17.4.2",
     "lucide-react": "^1.41.0",
