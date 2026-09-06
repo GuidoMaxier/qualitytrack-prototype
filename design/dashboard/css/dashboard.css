@@ -1,0 +1,45 @@
+/* ================================================================
+   QualityTrack — design/dashboard · hoja de estilos
+   Tokens de color, tipografías, grid de fondo, sellos, botones,
+   formularios y utilidades. Extraída verbatim de design/dashboard.html.
+   ================================================================ */
+  :root{--ink:#22262D;--paper:#F2EFE8;--card:#FBFAF6;--line:#DAD5C8;--line2:#C4BDAC;--muted:#7B7565;--accent:#D9480F;--ok:#2E7D4F;--warn:#A8760E;--danger:#B23A2E}
+  body{background:var(--paper);color:var(--ink);font-family:'Archivo',sans-serif}
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:linear-gradient(rgba(34,38,45,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(34,38,45,.035) 1px,transparent 1px);
+    background-size:26px 26px}
+  .disp{font-stretch:114%}
+  .xdisp{font-stretch:124%}
+  .kicker{font:600 10px 'JetBrains Mono';letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+  .cellhead{font:600 9.5px 'JetBrains Mono';letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .stamp{position:relative;display:inline-block;border:1.5px solid currentColor;padding:.4rem .8rem;font:700 11px 'JetBrains Mono';letter-spacing:.18em;text-transform:uppercase}
+  .stamp::after{content:'';position:absolute;inset:2px;border:1px solid currentColor;opacity:.45;pointer-events:none}
+  .tag{display:inline-block;border:1px solid currentColor;padding:.18rem .5rem;font:600 9.5px/1.4 'JetBrains Mono';letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border:1.5px solid var(--ink);padding:.55rem .95rem;font:600 10.5px 'JetBrains Mono';letter-spacing:.14em;text-transform:uppercase;background:var(--card);color:var(--ink);cursor:pointer;transition:all .15s}
+  .btn:hover{background:var(--ink);color:var(--paper)}
+  .btn-acc{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn-acc:hover{background:#A83A0B;border-color:#A83A0B;color:#fff}
+  .btn-sm{padding:.35rem .6rem;font-size:9.5px}
+  .btn:disabled{opacity:.4;pointer-events:none}
+  .th{font:600 9.5px 'JetBrains Mono';letter-spacing:.18em;text-transform:uppercase;color:var(--muted);padding:.8rem 1rem;border-bottom:2px solid var(--ink);white-space:nowrap}
+  .td{padding:.8rem 1rem;vertical-align:middle}
+  .cm{position:absolute;width:13px;height:13px;pointer-events:none}
+  .cm-tl{top:-5px;left:-5px;border-top:2px solid var(--ink);border-left:2px solid var(--ink)}
+  .cm-tr{top:-5px;right:-5px;border-top:2px solid var(--ink);border-right:2px solid var(--ink)}
+  .cm-bl{bottom:-5px;left:-5px;border-bottom:2px solid var(--ink);border-left:2px solid var(--ink)}
+  .cm-br{bottom:-5px;right:-5px;border-bottom:2px solid var(--ink);border-right:2px solid var(--ink)}
+  @keyframes pulseNode{0%{box-shadow:0 0 0 0 rgba(217,72,15,.4)}70%{box-shadow:0 0 0 7px rgba(217,72,15,0)}100%{box-shadow:0 0 0 0 rgba(217,72,15,0)}}
+  .node-live{animation:pulseNode 2s infinite}
+  @keyframes tin{from{transform:translateX(18px);opacity:0}to{transform:none;opacity:1}}
+  .toast{animation:tin .25s ease}
+  @keyframes pop{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
+  .sheet{animation:pop .16s ease}
+  .scroll-slim::-webkit-scrollbar{width:8px;height:8px}
+  .scroll-slim::-webkit-scrollbar-thumb{background:var(--line2)}
+  .scroll-slim::-webkit-scrollbar-track{background:transparent}
+  .doc-sheet{background:#fff;box-shadow:0 30px 70px -25px rgba(0,0,0,.55)}
+  .rowgo{transition:transform .15s}
+  tr:hover .rowgo{transform:translateX(4px)}
+  input,select,textarea{font-family:'Archivo',sans-serif}
+  .fld{width:100%;border:1.5px solid var(--line2);background:var(--card);padding:.55rem .75rem;font-size:13px;outline:none;transition:border-color .15s}
+  .fld:focus{border-color:var(--ink)}

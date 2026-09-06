@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QualityTrack — Trazabilidad de Producción</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2322262D'/%3E%3Ctext x='16' y='22' font-family='monospace' font-weight='bold' font-size='14' fill='%23FBFAF6' text-anchor='middle'%3EQT%3C/text%3E%3Crect x='23' y='23' width='9' height='9' fill='%23D9480F'/%3E%3C/svg%3E">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={theme:{extend:{
+  colors:{paper:'#F2EFE8',card:'#FBFAF6',line:'#DAD5C8',line2:'#C4BDAC',ink:'#22262D',muted:'#7B7565',accent:'#D9480F',ok:'#2E7D4F',warn:'#A8760E',danger:'#B23A2E'},
+  fontFamily:{sans:['Archivo','sans-serif'],mono:['"JetBrains Mono"','monospace']},
+  boxShadow:{hard:'6px 6px 0 0 rgba(34,38,45,0.12)'}
+}}}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="css/dashboard.css" />
+</head>
+<body class="min-h-screen">
+
+<header class="sticky top-0 z-40 bg-card/95 backdrop-blur border-b-2 border-ink">
+  <div class="max-w-[1440px] mx-auto px-4 lg:px-8 h-[64px] flex items-center gap-4 lg:gap-6">
+    <button onclick="setView('board')" class="flex items-center gap-3 shrink-0">
+      <div class="w-9 h-9 bg-ink relative shrink-0">
+        <span class="absolute inset-0 grid place-items-center text-paper mono font-bold text-[14px]">QT</span>
+        <span class="absolute right-0 bottom-0 w-3 h-3 bg-accent"></span>
+      </div>
+      <div class="text-left leading-none hidden sm:block">
+        <div class="font-extrabold xdisp tracking-tight text-[17px]">QUALITYTRACK</div>
+        <div class="kicker mt-1" style="font-size:8.5px">TRAZABILIDAD · MECANIZADO</div>
+      </div>
+    </button>
+    <nav class="hidden md:flex items-stretch gap-1 ml-2 h-[64px]" id="navTabs"></nav>
+    <div class="flex-1"></div>
+    <div class="relative hidden sm:block">
+      <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted"></i>
+      <input id="gSearch" autocomplete="off" oninput="gSearchInput(this.value)" onfocus="gSearchInput(this.value)"
+        placeholder="Buscar OT · cliente · pieza · colada…"
+        class="w-[230px] lg:w-[330px] bg-paper border border-line2 focus:border-ink outline-none pl-9 pr-3 py-2 text-[13px] placeholder:text-muted/70">
+    </div>
+    <div class="hidden lg:block text-right leading-tight border-l border-line pl-5">
+      <div id="clock" class="mono text-[12px] font-semibold">--:--:--</div>
+      <div class="kicker" style="font-size:8.5px">L. GODOY · PLANIFICACIÓN</div>
+    </div>
+  </div>
+</header>
+
+<main id="app" class="relative z-10 max-w-[1440px] mx-auto px-4 lg:px-8 py-7"></main>
+
+<div id="docOverlay" class="fixed inset-0 z-50 hidden"></div>
+<div id="modalRoot" class="fixed inset-0 z-[60] hidden"></div>
+<div id="searchDrop" class="fixed z-50 hidden w-[400px] max-w-[92vw] border-2 border-ink bg-card shadow-hard overflow-hidden"></div>
+<div id="toasts" class="fixed z-[70] bottom-5 right-5 flex flex-col gap-2.5 w-[350px] max-w-[calc(100vw-40px)]"></div>
+
+  <!-- Scripts por sección (orden de carga obligatorio: base → plantillas → datos → vistas → UI) -->
+    <script src="js/01-base.js"></script>
+    <script src="js/02-plantillas.js"></script>
+    <script src="js/03-seed.js"></script>
+    <script src="js/04-estado.js"></script>
+    <script src="js/05-tablero.js"></script>
+    <script src="js/06-expediente.js"></script>
+    <script src="js/07-acciones.js"></script>
+    <script src="js/08-trazabilidad.js"></script>
+    <script src="js/09-nueva-solicitud.js"></script>
+    <script src="js/10-visores.js"></script>
+    <script src="js/11-documentos.js"></script>
+    <script src="js/12-ui.js"></script>
+</body>
+</html>
