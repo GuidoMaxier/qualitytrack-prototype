@@ -49,6 +49,7 @@ async function main() {
         providerId: "credential",
         userId: user.id,
         password: defaultHashedPassword,
+        issuer: "local:credential",
       },
     });
 
