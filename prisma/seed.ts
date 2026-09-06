@@ -19,7 +19,7 @@ async function main() {
   await prisma.cliente.deleteMany({});
 
   // 2. Usuarios del sistema (los 5 roles)
-  const gerente = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: "gerente@qualitytrack.com" },
     update: {},
     create: {
@@ -117,7 +117,7 @@ async function main() {
   const fRectificado = await prisma.faseCatalogo.create({
     data: { codigo: "RECTIFICADO", nombre: "Rectificado cilíndrico", descripcion: "Rectificadora R-320 de precisión" },
   });
-  const fAjuste = await prisma.faseCatalogo.create({
+  await prisma.faseCatalogo.create({
     data: { codigo: "AJUSTE", nombre: "Debaste, ajuste y marcado", descripcion: "Banco de ajuste y marcado de piezas" },
   });
   const fControlFinal = await prisma.faseCatalogo.create({

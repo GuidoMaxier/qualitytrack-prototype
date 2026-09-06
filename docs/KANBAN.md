@@ -18,13 +18,14 @@ Seguimiento de hitos y tareas del repositorio `GuidoMaxier/qualitytrack-prototyp
 ## Estado de Tareas
 
 ### Backlog (To Do)
-- [ ] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `feat(dashboard)`: Construir layout de `/dashboard` con metricas, reloj en vivo y navegacion.
-- [ ] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `feat(dashboard)`: Tablero Kanban interactivo con drag & drop / estados de fase.
-- [ ] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `feat(dashboard)`: Modal de Expediente Tecnico Unificado con timeline de calidad.
-- [ ] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `docs(api)`: Documentacion interactiva de OpenAPI en `/api-reference` con Scalar.
+- [ ] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `feat(dashboard)`: Acciones de transición de estado en vivo (Avanzar fase / Registrar auditoría desde UI).
 
 ### En Progreso
-- [ ] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `feat(dashboard)`: Integracion de API routes y componentes visuales del dashboard.
+- [ ] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `feat(dashboard)`: Dashboard industrial con métricas, tabla filtrable y expediente técnico unificado.
+
+### Completado
+- [x] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `docs(api)`: Documentación interactiva OpenAPI montada en `/api-reference` con Scalar.
+- [x] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `feat(api)`: Endpoints de lectura y actualización `/api/ordenes-trabajo` y `/api/ot-fases`.
 
 ### Completado
 - [x] Inicializacion de Next.js 16.3.4 (App Router) y Tailwind CSS v4.
