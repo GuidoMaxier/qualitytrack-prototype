@@ -11,35 +11,37 @@ datasource db {
 // -----------------------------------------------------------------------------
 
 model User {
-  id            String    @id @default(cuid())
+  id            String   @id @default(cuid())
   name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
+  email         String   @unique
+  emailVerified Boolean  @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Campos específicos de QualityTrack
-  rol           String    @default("OPERARIO") // GERENTE, JEFE_PRODUCCION, VENDEDOR, OPERARIO, CALIDAD
-  tipo_tarea    String?   // Tornero, Fresador, Soldador, Rectificador, etc.
-  telefono      String?
-  activo        Boolean   @default(true)
+  rol        String  @default("OPERARIO") // GERENTE, JEFE_PRODUCCION, VENDEDOR, OPERARIO, CALIDAD
+  tipo_tarea String? // Tornero, Fresador, Soldador, Rectificador, etc.
+  telefono   String?
+  activo     Boolean @default(true)
 
-  sessions      Session[]
-  accounts      Account[]
+  sessions Session[]
+  accounts Account[]
 
   // Relaciones del dominio QualityTrack
-  fasesHabilitadas           FaseOperarioHabilitado[] @relation("OperarioHabilitaciones")
-  habilitacionesOtorgadas    FaseOperarioHabilitado[] @relation("GerenteHabilitador")
-  solicitudesCargadas        Solicitud[]              @relation("VendedorSolicitud")
-  adjuntosSubidos            Adjunto[]                @relation("UsuarioAdjuntos")
-  cotizacionesElaboradas     Cotizacion[]             @relation("JefeCotizacion")
-  otFasesAsignadas           OTFase[]                 @relation("OperarioOTFases")
-  reasignacionesAnteriores   OTFaseReasignacion[]     @relation("OperarioAnterior")
-  reasignacionesNuevas       OTFaseReasignacion[]     @relation("OperarioNuevo")
-  reasignacionesRealizadas   OTFaseReasignacion[]     @relation("JefeReasignador")
-  notasEscritas              OTNota[]                 @relation("UsuarioOTNotas")
-  auditoriasRealizadas       AuditoriaCalidad[]       @relation("AuditorAuditorias")
+  fasesHabilitadas         FaseOperarioHabilitado[] @relation("OperarioHabilitaciones")
+  habilitacionesOtorgadas  FaseOperarioHabilitado[] @relation("GerenteHabilitador")
+  solicitudesCargadas      Solicitud[]              @relation("VendedorSolicitud")
+  adjuntosSubidos          Adjunto[]                @relation("UsuarioAdjuntos")
+  cotizacionesElaboradas   Cotizacion[]             @relation("JefeCotizacion")
+  otFasesAsignadas         OTFase[]                 @relation("OperarioOTFases")
+  reasignacionesAnteriores OTFaseReasignacion[]     @relation("OperarioAnterior")
+  reasignacionesNuevas     OTFaseReasignacion[]     @relation("OperarioNuevo")
+  reasignacionesRealizadas OTFaseReasignacion[]     @relation("JefeReasignador")
+  notasEscritas            OTNota[]                 @relation("UsuarioOTNotas")
+  auditoriasRealizadas     AuditoriaCalidad[]       @relation("AuditorAuditorias")
+  ncAbiertas               NoConformidad[]          @relation("AuditorAbreNC")
+  ncCerradas               NoConformidad[]          @relation("AuditorCierraNC")
 
   @@map("user")
 }
@@ -67,7 +69,7 @@ model Account {
   accessToken           String?
   refreshToken          String?
   idToken               String?
-  accessTokenExpiresAt DateTime?
+  accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
   scope                 String?
   password              String?
@@ -94,18 +96,18 @@ model Verification {
 // -----------------------------------------------------------------------------
 
 model Cliente {
-  id             String      @id @default(cuid())
-  codigo         String?     @unique // Ej. CLI-014
-  razon_social   String
+  id              String   @id @default(cuid())
+  codigo          String?  @unique // Ej. CLI-014
+  razon_social    String
   contacto_nombre String
-  telefono       String
-  direccion      String
-  email          String?
-  activo         Boolean     @default(true)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  telefono        String
+  direccion       String
+  email           String?
+  activo          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  solicitudes    Solicitud[]
+  solicitudes Solicitud[]
 
   @@map("clientes")
 }
@@ -115,13 +117,13 @@ model Cliente {
 // -----------------------------------------------------------------------------
 
 model FaseCatalogo {
-  id          String      @id @default(cuid())
-  codigo      String      @unique // Ej. CORTE, TORNEADO, FRESADO, TRATAMIENTO, RECTIFICADO
-  nombre      String      @unique // Ej. Corte de materia prima, Torneado OD
+  id          String   @id @default(cuid())
+  codigo      String   @unique // Ej. CORTE, TORNEADO, FRESADO, TRATAMIENTO, RECTIFICADO
+  nombre      String   @unique // Ej. Corte de materia prima, Torneado OD
   descripcion String?
-  activo      Boolean     @default(true)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   operariosHabilitados FaseOperarioHabilitado[]
   cotizacionFases      CotizacionFase[]
@@ -132,16 +134,16 @@ model FaseCatalogo {
 
 // Matriz de Competencias: Qué operarios están habilitados para cada fase
 model FaseOperarioHabilitado {
-  id               String       @id @default(cuid())
+  id               String   @id @default(cuid())
   fase_catalogo_id String
   operario_id      String
   asignado_por_id  String
-  habilitado       Boolean      @default(true)
-  createdAt        DateTime     @default(now())
+  habilitado       Boolean  @default(true)
+  createdAt        DateTime @default(now())
 
-  fase             FaseCatalogo @relation(fields: [fase_catalogo_id], references: [id], onDelete: Restrict)
-  operario         User         @relation("OperarioHabilitaciones", fields: [operario_id], references: [id], onDelete: Restrict)
-  asignadoPor      User         @relation("GerenteHabilitador", fields: [asignado_por_id], references: [id], onDelete: Restrict)
+  fase        FaseCatalogo @relation(fields: [fase_catalogo_id], references: [id], onDelete: Restrict)
+  operario    User         @relation("OperarioHabilitaciones", fields: [operario_id], references: [id], onDelete: Restrict)
+  asignadoPor User         @relation("GerenteHabilitador", fields: [asignado_por_id], references: [id], onDelete: Restrict)
 
   @@unique([fase_catalogo_id, operario_id])
   @@map("fase_operarios_habilitados")
@@ -152,46 +154,49 @@ model FaseOperarioHabilitado {
 // -----------------------------------------------------------------------------
 
 model Solicitud {
-  id                     String     @id @default(cuid())
-  numero_solicitud       String     @unique // Ej. RFQ-2214 o SOL-2026-0001
+  id                     String   @id @default(cuid())
+  numero_solicitud       String   @unique // Ej. RFQ-2214 o SOL-2026-0001
   cliente_id             String
   vendedor_id            String
   descripcion_pieza      String
   nombre_pieza           String?
-  codigo_plano           String?    // Ej. FL-1204
-  revision_plano         String?    // Ej. C
-  material               String?    // Ej. AISI 4140, AISI 316L, 42CrMo4
-  norma_material         String?    // Ej. EN 10204 · 3.1
-  cantidad               Int        @default(1)
+  codigo_plano           String? // Ej. FL-1204
+  revision_plano         String? // Ej. C
+  material               String? // Ej. AISI 4140, AISI 316L, 42CrMo4
+  norma_material         String? // Ej. EN 10204 · 3.1
+  cantidad               Int      @default(1)
   fecha_esperada_entrega DateTime
-  canal_contacto         String?    // Correo, Portal, Telefónico
+  canal_contacto         String? // Correo, Portal, Telefónico
   notas_comerciales      String?
-  estado                 String     @default("PENDIENTE_COTIZACION") // PENDIENTE_COTIZACION, COTIZADA
-  createdAt              DateTime   @default(now())
-  updatedAt              DateTime   @updatedAt
+  estado                 String   @default("PENDIENTE_COTIZACION") // PENDIENTE_COTIZACION, COTIZADA
+  tipo_pieza             String? // flange | shaft | plate — define plantilla de hoja de ruta e inspección (diseño dashboard.html)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
-  cliente                Cliente    @relation(fields: [cliente_id], references: [id], onDelete: Restrict)
-  vendedor               User       @relation("VendedorSolicitud", fields: [vendedor_id], references: [id], onDelete: Restrict)
-  adjuntos               Adjunto[]
-  cotizacion             Cotizacion?
+  cliente    Cliente               @relation(fields: [cliente_id], references: [id], onDelete: Restrict)
+  vendedor   User                  @relation("VendedorSolicitud", fields: [vendedor_id], references: [id], onDelete: Restrict)
+  adjuntos   Adjunto[]
+  documentos DocumentoExpediente[]
+  eventos    BitacoraEvento[]
+  cotizacion Cotizacion?
 
   @@map("solicitudes")
 }
 
 // Planos, certificados y documentación técnica adjunta a la solicitud
 model Adjunto {
-  id                 String    @id @default(cuid())
-  solicitud_id       String
-  nombre_original    String
-  tipo_archivo       String    // PLANO, CERTIFICADO, ESPECIFICACION, OTRO
-  mime_type          String
-  tamanio_bytes      Int
+  id                  String   @id @default(cuid())
+  solicitud_id        String
+  nombre_original     String
+  tipo_archivo        String // PLANO, CERTIFICADO, ESPECIFICACION, OTRO
+  mime_type           String
+  tamanio_bytes       Int
   ruta_almacenamiento String
-  subido_por_id      String
-  createdAt          DateTime  @default(now())
+  subido_por_id       String
+  createdAt           DateTime @default(now())
 
-  solicitud          Solicitud @relation(fields: [solicitud_id], references: [id], onDelete: Cascade)
-  subidoPor          User      @relation("UsuarioAdjuntos", fields: [subido_por_id], references: [id], onDelete: Restrict)
+  solicitud Solicitud @relation(fields: [solicitud_id], references: [id], onDelete: Cascade)
+  subidoPor User      @relation("UsuarioAdjuntos", fields: [subido_por_id], references: [id], onDelete: Restrict)
 
   @@map("adjuntos")
 }
@@ -201,42 +206,59 @@ model Adjunto {
 // -----------------------------------------------------------------------------
 
 model Cotizacion {
-  id                      String           @id @default(cuid())
-  numero_cotizacion       String           @unique // Ej. COT-2025-0311
-  solicitud_id            String           @unique // D7: 1 cotización por solicitud
+  id                      String    @id @default(cuid())
+  numero_cotizacion       String    @unique // Ej. COT-2025-0311
+  solicitud_id            String    @unique // D7: 1 cotización por solicitud
   jefe_produccion_id      String
-  precio_final            Decimal          @db.Decimal(14, 2)
-  estado                  String           @default("LISTA_PARA_ENVIAR") // LISTA_PARA_ENVIAR, ENVIADA_A_CLIENTE, APROBADA, NO_APROBADA
-  validez_dias            Int?             @default(15)
+  precio_final            Decimal   @db.Decimal(14, 2)
+  estado                  String    @default("LISTA_PARA_ENVIAR") // LISTA_PARA_ENVIAR, ENVIADA_A_CLIENTE, APROBADA, NO_APROBADA
+  validez_dias            Int?      @default(15)
   fecha_envio_cliente     DateTime?
   fecha_respuesta_cliente DateTime?
-  aprobado_por_cliente    String?          // Nombre del contacto del cliente que dio el OK
+  aprobado_por_cliente    String? // Nombre del contacto del cliente que dio el OK
   motivo_rechazo_cliente  String?
   observaciones           String?
-  createdAt               DateTime         @default(now())
-  updatedAt               DateTime         @updatedAt
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
-  solicitud               Solicitud        @relation(fields: [solicitud_id], references: [id], onDelete: Restrict)
-  jefeProduccion          User             @relation("JefeCotizacion", fields: [jefe_produccion_id], references: [id], onDelete: Restrict)
-  fasesCotizadas          CotizacionFase[]
-  ordenTrabajo            OrdenTrabajo?
+  solicitud      Solicitud        @relation(fields: [solicitud_id], references: [id], onDelete: Restrict)
+  jefeProduccion User             @relation("JefeCotizacion", fields: [jefe_produccion_id], references: [id], onDelete: Restrict)
+  fasesCotizadas CotizacionFase[]
+  items          CotizacionItem[]
+  ordenTrabajo   OrdenTrabajo?
 
   @@map("cotizaciones")
 }
 
+// Ítems (líneas) del desglose de una cotización: descripción, cantidad y precio unitario.
+// Aditivo al diseño previo de "precio único": el total de referencia sigue siendo Cotizacion.precio_final.
+model CotizacionItem {
+  id              String  @id @default(cuid())
+  cotizacion_id   String
+  numero_linea    Int // 10, 20, 30…
+  descripcion     String
+  cantidad        Int     @default(1)
+  precio_unitario Decimal @db.Decimal(14, 2)
+
+  cotizacion Cotizacion @relation(fields: [cotizacion_id], references: [id], onDelete: Cascade)
+
+  @@unique([cotizacion_id, numero_linea])
+  @@map("cotizacion_items")
+}
+
 // Secuencia de operaciones y tiempos estimados planificados
 model CotizacionFase {
-  id                      String       @id @default(cuid())
+  id                      String   @id @default(cuid())
   cotizacion_id           String
   fase_catalogo_id        String
-  numero_secuencia        Int          // 10, 20, 30... o 1, 2, 3
+  numero_secuencia        Int // 10, 20, 30... o 1, 2, 3
   tiempo_estimado_minutos Int
   maquinaria_sugerida     String?
   instrucciones_fase      String?
-  createdAt               DateTime     @default(now())
+  createdAt               DateTime @default(now())
 
-  cotizacion              Cotizacion   @relation(fields: [cotizacion_id], references: [id], onDelete: Cascade)
-  faseCatalogo            FaseCatalogo @relation(fields: [fase_catalogo_id], references: [id], onDelete: Restrict)
+  cotizacion   Cotizacion   @relation(fields: [cotizacion_id], references: [id], onDelete: Cascade)
+  faseCatalogo FaseCatalogo @relation(fields: [fase_catalogo_id], references: [id], onDelete: Restrict)
 
   @@unique([cotizacion_id, numero_secuencia])
   @@map("cotizacion_fases")
@@ -247,55 +269,58 @@ model CotizacionFase {
 // -----------------------------------------------------------------------------
 
 model OrdenTrabajo {
-  id                      String             @id @default(cuid())
-  numero_ot               String             @unique // Ej. OT-2025-0104
-  cotizacion_id           String             @unique // D8: 1 OT por cotización aprobada
-  cantidad                Int                @default(1)
-  numero_colada           String?            // Número de colada de materia prima asignado (ej. 88412)
-  prioridad               String             @default("NORMAL") // ALTA, NORMAL, BAJA
-  estado                  String             @default("EN_PRODUCCION") // EN_PRODUCCION, EN_CALIDAD, NO_CONFORME, DESPACHO, ENTREGADA
+  id                      String    @id @default(cuid())
+  numero_ot               String    @unique // Ej. OT-2025-0104
+  cotizacion_id           String    @unique // D8: 1 OT por cotización aprobada
+  cantidad                Int       @default(1)
+  numero_colada           String? // Número de colada de materia prima asignado (ej. 88412)
+  prioridad               String    @default("NORMAL") // ALTA, NORMAL, BAJA
+  estado                  String    @default("EN_PRODUCCION") // EN_PRODUCCION, EN_CALIDAD, NO_CONFORME, DESPACHO, ENTREGADA
   fecha_inicio_produccion DateTime?
-  fecha_pase_calidad      DateTime?          // Base para indicador de tiempo en control de calidad
+  fecha_pase_calidad      DateTime? // Base para indicador de tiempo en control de calidad
   fecha_pase_despacho     DateTime?
   fecha_entrega           DateTime?
   receptor_nombre         String?
-  numero_remito           String?            // Ej. REM-2025-0188
-  numero_factura          String?            // Ej. A 0021-00457
-  createdAt               DateTime           @default(now())
-  updatedAt               DateTime           @updatedAt
+  numero_remito           String? // Ej. REM-2025-0188
+  numero_factura          String? // Ej. A 0021-00457
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
-  cotizacion              Cotizacion         @relation(fields: [cotizacion_id], references: [id], onDelete: Restrict)
-  fases                   OTFase[]
-  notas                   OTNota[]
-  auditorias              AuditoriaCalidad[]
+  cotizacion      Cotizacion            @relation(fields: [cotizacion_id], references: [id], onDelete: Restrict)
+  fases           OTFase[]
+  notas           OTNota[]
+  auditorias      AuditoriaCalidad[]
+  noConformidades NoConformidad[]
+  documentos      DocumentoExpediente[]
+  eventos         BitacoraEvento[]
 
   @@map("ordenes_trabajo")
 }
 
 // Instancia ejecutable de cada operación en la planta
 model OTFase {
-  id                      String               @id @default(cuid())
+  id                      String    @id @default(cuid())
   orden_trabajo_id        String
   fase_catalogo_id        String
   numero_secuencia        Int
   operario_id             String
-  maquinaria              String?              // Ej. Torno CNC Gildemeister, Centro Haas VF-4
+  maquinaria              String? // Ej. Torno CNC Gildemeister, Centro Haas VF-4
   tiempo_estimado_minutos Int
-  fecha_vencimiento       DateTime?            // Calculado hacia adelante al ingresar a cola
-  estado                  String               @default("EN_COLA") // EN_COLA, EN_EJECUCION, TERMINADO
+  fecha_vencimiento       DateTime? // Calculado hacia adelante al ingresar a cola
+  estado                  String    @default("EN_COLA") // EN_COLA, EN_EJECUCION, TERMINADO
   fecha_inicio_real       DateTime?
   fecha_fin_real          DateTime?
   duracion_real_minutos   Int?
-  es_rehacer              Boolean              @default(false)     // True si proviene de retrabajo por NC
-  ciclo_iteracion         Int                  @default(1)         // 1 = normal, 2+ = retrabajo
-  createdAt               DateTime             @default(now())
-  updatedAt               DateTime             @updatedAt
+  es_rehacer              Boolean   @default(false) // True si proviene de retrabajo por NC
+  ciclo_iteracion         Int       @default(1) // 1 = normal, 2+ = retrabajo
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
-  ordenTrabajo            OrdenTrabajo         @relation(fields: [orden_trabajo_id], references: [id], onDelete: Restrict)
-  faseCatalogo            FaseCatalogo         @relation(fields: [fase_catalogo_id], references: [id], onDelete: Restrict)
-  operario                User                 @relation("OperarioOTFases", fields: [operario_id], references: [id], onDelete: Restrict)
-  reasignaciones          OTFaseReasignacion[]
-  notas                   OTNota[]
+  ordenTrabajo   OrdenTrabajo         @relation(fields: [orden_trabajo_id], references: [id], onDelete: Restrict)
+  faseCatalogo   FaseCatalogo         @relation(fields: [fase_catalogo_id], references: [id], onDelete: Restrict)
+  operario       User                 @relation("OperarioOTFases", fields: [operario_id], references: [id], onDelete: Restrict)
+  reasignaciones OTFaseReasignacion[]
+  notas          OTNota[]
 
   @@unique([orden_trabajo_id, numero_secuencia, ciclo_iteracion])
   @@map("ot_fases")
@@ -311,27 +336,27 @@ model OTFaseReasignacion {
   motivo               String?
   fecha_reasignacion   DateTime @default(now())
 
-  otFase               OTFase   @relation(fields: [ot_fase_id], references: [id], onDelete: Cascade)
-  operarioAnterior     User     @relation("OperarioAnterior", fields: [operario_anterior_id], references: [id], onDelete: Restrict)
-  operarioNuevo        User     @relation("OperarioNuevo", fields: [operario_nuevo_id], references: [id], onDelete: Restrict)
-  reasignadoPor        User     @relation("JefeReasignador", fields: [reasignado_por_id], references: [id], onDelete: Restrict)
+  otFase           OTFase @relation(fields: [ot_fase_id], references: [id], onDelete: Cascade)
+  operarioAnterior User   @relation("OperarioAnterior", fields: [operario_anterior_id], references: [id], onDelete: Restrict)
+  operarioNuevo    User   @relation("OperarioNuevo", fields: [operario_nuevo_id], references: [id], onDelete: Restrict)
+  reasignadoPor    User   @relation("JefeReasignador", fields: [reasignado_por_id], references: [id], onDelete: Restrict)
 
   @@map("ot_fase_reasignaciones")
 }
 
 // Bitácora y notas discriminadas por origen
 model OTNota {
-  id               String       @id @default(cuid())
+  id               String   @id @default(cuid())
   orden_trabajo_id String
   ot_fase_id       String?
   usuario_id       String
-  origen           String       // CALIDAD, JEFE_PRODUCCION
+  origen           String // CALIDAD, JEFE_PRODUCCION
   contenido        String
-  createdAt        DateTime     @default(now())
+  createdAt        DateTime @default(now())
 
-  ordenTrabajo     OrdenTrabajo @relation(fields: [orden_trabajo_id], references: [id], onDelete: Cascade)
-  otFase           OTFase?      @relation(fields: [ot_fase_id], references: [id], onDelete: SetNull)
-  usuario          User         @relation("UsuarioOTNotas", fields: [usuario_id], references: [id], onDelete: Restrict)
+  ordenTrabajo OrdenTrabajo @relation(fields: [orden_trabajo_id], references: [id], onDelete: Cascade)
+  otFase       OTFase?      @relation(fields: [ot_fase_id], references: [id], onDelete: SetNull)
+  usuario      User         @relation("UsuarioOTNotas", fields: [usuario_id], references: [id], onDelete: Restrict)
 
   @@map("ot_notas")
 }
@@ -341,34 +366,104 @@ model OTNota {
 // -----------------------------------------------------------------------------
 
 model AuditoriaCalidad {
-  id                     String                        @id @default(cuid())
-  orden_trabajo_id       String
-  auditor_id             String
-  numero_auditoria       Int                           @default(1)
-  resultado              String                        // CONFORME, NO_CONFORME
+  id                      String   @id @default(cuid())
+  orden_trabajo_id        String
+  auditor_id              String
+  numero_auditoria        Int      @default(1)
+  resultado               String // EN_PROCESO, CONFORME, NO_CONFORME
   observaciones_generales String?
-  fecha_veredicto        DateTime                      @default(now())
-  createdAt              DateTime                      @default(now())
+  fecha_veredicto         DateTime @default(now())
+  createdAt               DateTime @default(now())
 
-  ordenTrabajo           OrdenTrabajo                  @relation(fields: [orden_trabajo_id], references: [id], onDelete: Restrict)
-  auditor                User                          @relation("AuditorAuditorias", fields: [auditor_id], references: [id], onDelete: Restrict)
-  checklistRespuestas    AuditoriaChecklistRespuesta[]
+  ordenTrabajo        OrdenTrabajo                  @relation(fields: [orden_trabajo_id], references: [id], onDelete: Restrict)
+  auditor             User                          @relation("AuditorAuditorias", fields: [auditor_id], references: [id], onDelete: Restrict)
+  checklistRespuestas AuditoriaChecklistRespuesta[]
 
   @@unique([orden_trabajo_id, numero_auditoria])
   @@map("auditorias_calidad")
 }
 
-// Los 7 puntos de control canónicos de la pieza terminada
+// Ítems del plan de inspección aplicado a una ronda de auditoría (diseño dashboard.html:
+// plan tipo "QL-xx" con especificación y método; resultado_item null = pendiente de responder).
 model AuditoriaChecklistRespuesta {
-  id             String           @id @default(cuid())
-  auditoria_id   String
-  item_numero    Int              // 1 a 7
-  criterio_nombre String          // Ej. Conformidad dimensional, Terminación/acabado, etc.
-  resultado_item String?          // CUMPLE, NO_CUMPLE, NO_APLICA (null = sin responder)
-  observaciones  String?
+  id              String  @id @default(cuid())
+  auditoria_id    String
+  item_numero     Int // 1 a N dentro de la ronda
+  codigo_item     String? // QL-01, QL-02… (referencia estable del control)
+  criterio_nombre String // Ej. Control dimensional general, Dureza superficial…
+  especificacion  String? // Ej. "Según plano · ISO 2768-mK" o "40–44 HRC"
+  metodo          String? // Ej. "Calibre, micrómetro, comparador"
+  resultado_item  String? // CUMPLE, NO_CUMPLE, NO_APLICA (null = sin responder)
+  observaciones   String?
 
-  auditoria      AuditoriaCalidad @relation(fields: [auditoria_id], references: [id], onDelete: Cascade)
+  auditoria AuditoriaCalidad @relation(fields: [auditoria_id], references: [id], onDelete: Cascade)
 
   @@unique([auditoria_id, item_numero])
   @@map("auditoria_checklist_respuestas")
+}
+
+// No conformidad de calidad registrada contra una OT (diseño: NC con disposición, reproceso y cierre)
+model NoConformidad {
+  id               String    @id @default(cuid())
+  numero           String    @unique // Ej. NC-2025-0001
+  orden_trabajo_id String
+  codigo_control   String? // QL-xx del plan de inspección que falló
+  descripcion      String
+  disposicion      String // Ej. Reproceso en planta
+  estado           String    @default("ABIERTA") // ABIERTA | CERRADA
+  abierta_por_id   String
+  cerrada_por_id   String?
+  fecha_apertura   DateTime  @default(now())
+  fecha_cierre     DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  ordenTrabajo OrdenTrabajo @relation(fields: [orden_trabajo_id], references: [id], onDelete: Restrict)
+  abiertaPor   User         @relation("AuditorAbreNC", fields: [abierta_por_id], references: [id], onDelete: Restrict)
+  cerradaPor   User?        @relation("AuditorCierraNC", fields: [cerrada_por_id], references: [id], onDelete: Restrict)
+
+  @@map("no_conformidades")
+}
+
+// Documento del expediente (diseño: SOL, PLANO, ET, CERT, OC, COTD, QC, REM, FAC, INF, ADJ)
+// Se vincula al expediente raíz: OrdenTrabajo (OT generada) o Solicitud (expediente comercial sin OT).
+// archivo_bytes/mime_type/archivo_nombre son opcionales: si hay archivo real adjunto se sirve por
+// GET /api/documentos/[id]/archivo; si no, la UI muestra el plano genérico del tipo de pieza.
+model DocumentoExpediente {
+  id               String   @id @default(cuid())
+  orden_trabajo_id String?
+  solicitud_id     String?
+  tipo             String // SOL PLANO ET CERT OC COTD QC REM FAC INF ADJ
+  numero           String? // Ej. OC-4412, CI-0254, REM-2025-0188
+  titulo           String
+  etapa            String // sol | cot | ot | ruta | cal | ent
+  sello            String? // RECIBIDO | APROBADO | CONFORME | LIBERADO
+  hash_integridad  String?
+  emision          DateTime
+  firmado_por      String?
+  archivo_nombre   String? // Nombre original del archivo subido (si existe)
+  mime_type        String? // application/pdf, image/png, …
+  archivo_bytes    Bytes? // Contenido (prototipo: almacenado en Neon; migrable a blob/s3)
+  createdAt        DateTime @default(now())
+
+  ordenTrabajo OrdenTrabajo? @relation(fields: [orden_trabajo_id], references: [id], onDelete: Cascade)
+  solicitud    Solicitud?    @relation(fields: [solicitud_id], references: [id], onDelete: Cascade)
+
+  @@map("documentos_expediente")
+}
+
+// Bitácora de eventos del expediente (diseño: log con actor, fecha y texto por etapa)
+model BitacoraEvento {
+  id               String   @id @default(cuid())
+  orden_trabajo_id String?
+  solicitud_id     String?
+  fecha            DateTime @default(now())
+  actor            String // Ej. "Comercial — P. Lanza", "Producción — M. Ibarra"
+  texto            String
+  createdAt        DateTime @default(now())
+
+  ordenTrabajo OrdenTrabajo? @relation(fields: [orden_trabajo_id], references: [id], onDelete: Cascade)
+  solicitud    Solicitud?    @relation(fields: [solicitud_id], references: [id], onDelete: Cascade)
+
+  @@map("bitacora_eventos")
 }
