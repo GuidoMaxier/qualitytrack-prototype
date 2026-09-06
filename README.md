@@ -18,10 +18,11 @@ Todos los usuarios institucionales han sido inicializados en la base de datos co
 | **GERENTE** | `gerente@qualitytrack.com` | `Clave/123.` | Supervision ejecutiva de planta, configuracion del catalogo de fases y matriz de competencias de operarios. |
 | **JEFE_PRODUCCION** | `planificacion@qualitytrack.com` | `Clave/123.` | Planificacion de hojas de ruta, cotizaciones tecnicas, liberacion de OTs a produccion y balanceo de carga. |
 | **VENDEDOR** | `comercial@qualitytrack.com` | `Clave/123.` | Registro de clientes, carga de solicitudes (RFQ), seguimiento de presupuestos y confirmacion de aprobacion. |
-| **CALIDAD** | `calidad@qualitytrack.com` | `Clave/123.` | Auditorias de 7 puntos canonicos, liberacion a despacho o apertura de No Conformidades (NC). |
+| **CALIDAD** | `calidad@qualitytrack.com` | `Clave/123.` | Auditorias segun plan de inspeccion por tipo de pieza (QL), liberacion a despacho o apertura de No Conformidades (NC). |
 | **OPERARIO (Tornero)** | `r.suarez@qualitytrack.com` | `Clave/123.` | Ejecucion de corte y torneado en Sierra HEM / Torno CNC, registro de tiempos reales. |
 | **OPERARIO (CNC)** | `m.ibarra@qualitytrack.com` | `Clave/123.` | Mecanizado de precision en Centro Haas VF-4 y torno CNC. |
 | **OPERARIO (Ajuste)** | `j.paredes@qualitytrack.com` | `Clave/123.` | Taladrado radial Ferrari, tareas de banco, ajuste y marcado de colada. |
+| **OPERARIO (Rectificador)** | `c.ferrer@qualitytrack.com` | `Clave/123.` | Rectificado cilindrico en rectificadora R-320, acabado de precision. |
 
 ---
 

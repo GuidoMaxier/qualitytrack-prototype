@@ -12,6 +12,9 @@ Seguimiento de hitos y tareas del repositorio `GuidoMaxier/qualitytrack-prototyp
 | **M2: DevOps, Calidad & CI/CD** | Completado | Husky, Commitlint, lint-staged, validacion de tipos y GitHub Actions. |
 | **M3: Base de Datos Prisma 7 & Seed** | Completado | Modelado industrial completo (OTs, fases, auditorias) y seed poblado. |
 | **M4: Dashboard Industrial & Expediente** | Completado | Tablero Kanban, tabla de OTs, expediente unico y docs con Scalar. |
+| **M5: Ciclo Comercial + Clientes + Archivos** | Completado | Schema/seed v3, Nueva Solicitud (buscador de cliente + alta en modal + adjuntar plano del cliente), cotizaciones en tablero, aprobar cotizacion, generar OT, adjuntar/servir archivos. |
+| **M6: Expediente por etapas + Planta** | Pendiente | Expediente 6 etapas con docs/bitacora y acciones de planta (operaciones, calidad QL, NC, liberar, entrega). |
+| **M7: Roles, Seguridad y Trazabilidad** | Pendiente | Login aplicando permisos por rol en API/UI, vista Trazabilidad, dashboards Gerente/Operario/Calidad. |
 
 ---
 
@@ -23,6 +26,10 @@ Seguimiento de hitos y tareas del repositorio `GuidoMaxier/qualitytrack-prototyp
 
 ### En Progreso
 - [ ] `testing`: Pruebas de usuario y validacion funcional de flujos.
+- [ ] `refactor(design)`: `design/dashboard.html` (1.676 líneas) separado en módulos en `design/dashboard/` (index + css + 12 js documentados). Hecho y verificado por sintaxis — falta validación visual en browser.
+
+### Completado
+- [x] `feat(db)`: Schema + seed **v3** alineados con `design/dashboard.html` (`CotizacionItem`, `NoConformidad`, `DocumentoExpediente`, `BitacoraEvento`, plan QA QL, `tipo_pieza`). Aplicado en Neon (`prisma db push`) y seed ejecutado con verificacion de conteos: 4 OTs + 2 expedientes comerciales, 31 docs y 33 eventos de bitacora.
 
 ### Completado
 - [x] **[#4](https://github.com/GuidoMaxier/qualitytrack-prototype/issues/4)** `feat(dashboard)`: Dashboard industrial con metricas, tabla filtrable y expediente tecnico unificado.

@@ -874,4 +874,15 @@ INSERT INTO clientes (razon_social, contacto_nombre, telefono, direccion, email)
 
 ---
 
+## Apéndice v3 · Ajustes aditivos al esquema (alineación con `design/dashboard.html`)
+
+El prototipo funcional del dashboard quedó por delante del modelo v2 (hojas de ruta por tipo de pieza, plan de inspección QL, documentos por etapa, bitácora, entregas). Los ajustes son **aditivos y reversibles**; el detalle de decisiones está en `QualityTrack-Cambios-PRD-Backlog.md` §08 (V3-1…V3-8) y la fuente de verdad es `prisma/schema.prisma`:
+
+- **Nuevos modelos:** `CotizacionItem` (desglose por línea), `NoConformidad` (NC con disposición y cierre), `DocumentoExpediente` (documentos por etapa con sello/hash), `BitacoraEvento` (bitácora actor + fecha + texto).
+- **Campos nuevos:** `Solicitud.tipo_pieza` (`flange|shaft|plate`); `AuditoriaChecklistRespuesta.codigo_item/especificacion/metodo`; `AuditoriaCalidad.resultado` admite `EN_PROCESO`.
+- **Semántica QA:** el checklist deja de ser un conjunto fijo de 7 puntos: los ítems de `auditoria_checklist_respuestas` **son** el plan de inspección aplicado a la ronda (7 puntos u otro plan según la pieza), con `resultado_item` null = pendiente y `numero_auditoria` incrementándose por ronda tras una NC.
+- **Seed v3:** 4 OTs (0104 EN_PRODUCCION · 0103 EN_CALIDAD · 0102 DESPACHO · 0101 ENTREGADA) + 2 expedientes comerciales sin OT (COT-2025-0089/0090), con fechas unificadas en 2025.
+
+---
+
 *QualityTrack · NO-Country 2026. Consolidación de las propuestas de esquema de Mel Zarate y Ángel, contrastadas contra la Especificación Funcional v1 y el Backlog v1.*

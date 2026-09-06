@@ -276,4 +276,23 @@ Surgieron en la discusión y el modelo queda preparado para recibirlas sin redis
 
 ---
 
+## 08. v3 · Alineación del seed y esquema con el prototipo `design/dashboard.html`
+
+El prototipo funcional `design/dashboard.html` (M4) quedó por delante de la base de datos: sus 6 expedientes semilla traen hojas de ruta por tipo de pieza, plan de inspección QL, documentos por etapa, bitácora y entregas que el modelo v2 no representaba. Se decidió **alinear schema + seed al prototipo** de forma **aditiva** (no se renombra ni se elimina nada existente; todo es reversible).
+
+| # | Decisión | Tipo |
+|---|---|---|
+| **V3-1** | **Fecha de referencia unificada en 2025.** El seed previo usaba fechas 2026 junto a numeración `OT-2025-…` (inconsistente). El prototipo usa 2025 en todo el expediente; se adopta 2025. | Corrección |
+| **V3-2** | **`CotizacionItem`** (nuevo): desglose por línea (descripción, cantidad, precio unitario). `Cotizacion.precio_final` sigue siendo el único total de referencia: la decisión de "precio único" (sección 05) se conserva a nivel de total, los ítems son desglose descriptivo. | Extensión aditiva |
+| **V3-3** | **`NoConformidad`** (nuevo): la NC pasa de ser solo un estado (`NO_CONFORME`) a entidad con número, código de control, disposición y cierre (ABIERTA/CERRADA), abierta/cerrada por usuario. | Extensión aditiva |
+| **V3-4** | **`DocumentoExpediente`** (nuevo): documentos del expediente por etapa (SOL, PLANO, CERT, OC, COTD, QC, REM, FAC, INF, ADJ) con sello, número y hash, colgados del expediente raíz (`OrdenTrabajo` o `Solicitud`). `Adjunto` sigue reservado a archivos físicos. | Extensión aditiva |
+| **V3-5** | **`BitacoraEvento`** (nuevo): bitácora del expediente (actor + fecha + texto), que el modelo v2 solo aproximaba con `OTNota` (2 orígenes). | Extensión aditiva |
+| **V3-6** | **Plan de inspección por tipo de pieza.** `AuditoriaChecklistRespuesta` suma `codigo_item` (QL-01…), `especificacion` y `metodo`, y `AuditoriaCalidad.resultado` admite `EN_PROCESO`. El "checklist canónico de 7 puntos" deja de ser un conjunto fijo: los ítems de la tabla **son** el plan aplicado (7 puntos u otro plan según la pieza), con `resultado_item` null = pendiente (ya definido en C-3). | Definición |
+| **V3-7** | **`Solicitud.tipo_pieza`** (`flange` / `shaft` / `plate`): permite derivar la plantilla de hoja de ruta y el plan QL al generar la OT, como hace el prototipo. | Extensión aditiva |
+| **V3-8** | **Seed con los 6 expedientes del prototipo**: OTs 0104 (producción), 0103 (calidad, QL-01 conforme / QL-02 y 03 pendientes), 0102 (despacho liberado, CI-0254), 0101 (entregada con remito/factura/receptor) y los expedientes comerciales COT-2025-0089 (pendiente, cliente nuevo TecnoFer CLI-031) y COT-2025-0090 (aprobada, lista para OT). Se agrega el operario C. Ferrer (rectificador) y la matriz de competencias se completa para que toda asignación de las hojas de ruta esté habilitada. | Datos |
+
+**Pendiente:** aplicar a Neon (`prisma db push` + seed) — no se ejecutó contra la base compartida; verificación local por `prisma format`/`generate`/`typecheck` y CI.
+
+---
+
 *QualityTrack · NO-Country 2026. Derivado de la consolidación del esquema de base de datos (`spec/QualityTrack-Esquema-Base-Datos-v2.md`) contra la Especificación Funcional v1 y el Backlog v1.*
